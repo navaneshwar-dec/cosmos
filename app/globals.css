@@ -1,0 +1,115 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: #0d0d0d;
+  color: #e8e8e8;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', 'Segoe UI', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+input, button, textarea, select { font-family: inherit; }
+a { text-decoration: none; }
+button { -webkit-appearance: none; }
+
+::-webkit-scrollbar { width: 3px; height: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 4px; }
+
+/* ---------- animations ---------- */
+@keyframes sheetUp {
+  from { transform: translateY(108%); }
+  to   { transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes popIn {
+  from { transform: scale(0.96); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+
+/* ---------- layout ---------- */
+.app-header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 52px;
+  height: calc(52px + env(safe-area-inset-top, 0px));
+  padding-top: env(safe-area-inset-top, 0px);
+  background: rgba(13, 13, 13, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid #1a1a1a;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  padding-left: 18px;
+  padding-right: 18px;
+}
+
+.app-content {
+  position: fixed;
+  top: 52px;
+  top: calc(52px + env(safe-area-inset-top, 0px));
+  bottom: 0;
+  left: 0; right: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+}
+
+.app-bottom-nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: rgba(13, 13, 13, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid #1a1a1a;
+  display: flex;
+  height: calc(56px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  z-index: 50;
+}
+
+/* ---------- todo responsive ---------- */
+.todo-input-bar {
+  margin: 0 16px 20px;
+}
+
+.todo-scroll-pad {
+  padding-bottom: 32px;
+}
+
+@media (max-width: 639px) {
+  .todo-input-bar {
+    position: fixed;
+    bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+    left: 0; right: 0;
+    margin: 0;
+    background: rgba(13, 13, 13, 0.97);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid #1c1c1c;
+    padding: 10px 12px;
+    z-index: 40;
+  }
+
+  .todo-scroll-pad {
+    padding-bottom: calc(150px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* ---------- gym responsive ---------- */
+@media (max-width: 639px) {
+  .gym-day-strip {
+    padding: 10px 10px;
+  }
+  .gym-content {
+    padding: 12px 10px 24px;
+  }
+}
