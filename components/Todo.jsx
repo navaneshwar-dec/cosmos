@@ -428,10 +428,11 @@ export default function Todo() {
   }
 
   const allLabels  = [...new Set(tasks.flatMap(t=>t.labels||[]))].sort();
-  const todayCount = tasks.filter(t=>!t.completed&&isToday(t.date)).length;
+  const overdueCount = tasks.filter(t=>!t.completed&&isOverdue(t.date)).length;
+  const todayCount = tasks.filter(t=>!t.completed&&isToday(t.date)).length + overdueCount;
 
   const filtered = tasks.filter(t=>{
-    const mf = filter==='All'?!t.completed:filter==='Today'?!t.completed&&isToday(t.date):filter==='Upcoming'?!t.completed&&isUpcoming(t.date):t.completed;
+    const mf = filter==='All'?!t.completed:filter==='Today'?!t.completed&&(isToday(t.date)||isOverdue(t.date)):filter==='Upcoming'?!t.completed&&isUpcoming(t.date):t.completed;
     return mf&&(!labelFilter||(t.labels||[]).includes(labelFilter));
   });
 
@@ -519,8 +520,16 @@ export default function Todo() {
           )}
 
           {/* Task rows */}
-          {filtered.map(task=>(
-            <div key={task.id} style={{ display:'flex',alignItems:'flex-start',gap:12,padding:'13px 14px',marginBottom:6,background:'#1a1a1a',border:`1px solid ${isOverdue(task.date)?'#ef444433':task.recurrence?'#7c3aed14':'#1e1e1e'}`,borderRadius:12,opacity:task.completed?0.45:1,transition:'opacity 0.2s' }}>
+          {filter==='Today'&&filtered.some(t=>isOverdue(t.date))&&(
+            <div style={{ fontSize:11,fontWeight:700,color:'#ef4444',letterSpacing:1.2,textTransform:'uppercase',padding:'4px 2px 8px',opacity:0.7 }}>Overdue</div>
+          )}
+          {filtered.map((task,idx)=>{
+            const prevOverdue = idx>0&&isOverdue(filtered[idx-1].date);
+            const thisToday   = isToday(task.date);
+            const showTodayDivider = filter==='Today'&&thisToday&&prevOverdue;
+            return <>
+              {showTodayDivider&&<div key={`div-${task.id}`} style={{ fontSize:11,fontWeight:700,color:'#a78bfa',letterSpacing:1.2,textTransform:'uppercase',padding:'12px 2px 8px',opacity:0.7 }}>Today</div>}
+              <div key={task.id} style={{ display:'flex',alignItems:'flex-start',gap:12,padding:'13px 14px',marginBottom:6,background:'#1a1a1a',border:`1px solid ${isOverdue(task.date)?'#ef444433':task.recurrence?'#7c3aed14':'#1e1e1e'}`,borderRadius:12,opacity:task.completed?0.45:1,transition:'opacity 0.2s' }}>
               {/* Checkbox */}
               <button onClick={()=>toggleTask(task.id)} style={{ width:24,height:24,borderRadius:7,border:`2px solid ${task.completed?'#7c3aed':'#2e2e2e'}`,background:task.completed?'#7c3aed':'transparent',cursor:'pointer',flexShrink:0,marginTop:0,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:12,fontWeight:800,transition:'all 0.15s' }}>
                 {task.completed&&'✓'}
@@ -540,7 +549,8 @@ export default function Todo() {
               <button onClick={()=>deleteTask(task.id)} style={{ background:'none',border:'none',color:'#2e2e2e',cursor:'pointer',fontSize:22,lineHeight:1,padding:'0 0 0 4px',flexShrink:0,transition:'color 0.15s' }}
                 onMouseEnter={e=>e.currentTarget.style.color='#ef4444'} onMouseLeave={e=>e.currentTarget.style.color='#2e2e2e'}>×</button>
             </div>
-          ))}
+            </>;
+          })}
 
           {rawTasks&&tasks.length>0&&(
             <div style={{ textAlign:'center',fontSize:12,color:'#2a2a2a',padding:'8px 0 4px' }}>
