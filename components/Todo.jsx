@@ -358,7 +358,7 @@ function NotificationBell({ permission, onRequest }) {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export default function Todo() {
-  const { data: rawTasks, mutate } = useSWR('/api/tasks', fetcher, {
+  const { data: rawTasks } = useSWR('/api/tasks', fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 30_000,
   });
@@ -368,6 +368,9 @@ export default function Todo() {
   const [filter, setFilter]           = useState('Today');
   const [labelFilter, setLabelFilter] = useState(null);
   const [view, setView]               = useState('list');
+  const [searchOpen, setSearchOpen]   = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [recurringOnly, setRecurringOnly] = useState(false);
   const [editTask, setEditTask]       = useState(null);
   const [parsedDate, setParsedDate]   = useState(null);
   const [parsedRecur, setParsedRecur] = useState(null);
@@ -391,6 +394,7 @@ export default function Todo() {
     if(recurPhrase) text=text.replace(recurPhrase,' ').replace(/\s+/g,' ').trim();
     if(chrono){const r=chrono.parse(text);if(r.length>0){date=r[0].date().toISOString();text=(text.slice(0,r[0].index)+text.slice(r[0].index+r[0].text.length)).replace(/\s+/g,' ').trim();}}
     text=text.replace(/\s*(,|by|at|on|in)\s*$/i,'').replace(/^(,|by|at|on|in)\s*/i,'').trim();
+    if(recurrence&&!date){const d=new Date();d.setHours(0,0,0,0);date=d.toISOString();}
     const opt={id:`tmp-${Date.now()}`,text,date,recurrence,labels:[],completed:false,created_at:new Date().toISOString()};
     setTasks(prev=>sortTasks([...prev,opt]));
     setInput('');setParsedDate(null);setParsedRecur(null);
@@ -398,7 +402,6 @@ export default function Todo() {
     const res=await fetch('/api/tasks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text,date,recurrence:recurrence??null})});
     const saved=await res.json();
     setTasks(prev=>sortTasks(prev.map(t=>t.id===opt.id?saved:t)));
-    mutate(undefined,{revalidate:false});
   }
 
   async function toggleTask(id) {
@@ -431,7 +434,13 @@ export default function Todo() {
   const overdueCount = tasks.filter(t=>!t.completed&&isOverdue(t.date)).length;
   const todayCount = tasks.filter(t=>!t.completed&&isToday(t.date)).length + overdueCount;
 
+  const searchActive = searchQuery.trim().length>0;
   const filtered = tasks.filter(t=>{
+    if(recurringOnly&&!t.recurrence) return false;
+    if(searchActive){
+      const q=searchQuery.trim().toLowerCase();
+      return t.text.toLowerCase().includes(q)||(t.labels||[]).some(l=>l.toLowerCase().includes(q));
+    }
     const mf = filter==='All'?!t.completed:filter==='Today'?!t.completed&&(isToday(t.date)||isOverdue(t.date)):filter==='Upcoming'?!t.completed&&isUpcoming(t.date):t.completed;
     return mf&&(!labelFilter||(t.labels||[]).includes(labelFilter));
   });
@@ -455,14 +464,32 @@ export default function Todo() {
             })}
           </div>
           <div style={{ display:'flex', gap:6, flexShrink:0 }}>
+            <button onClick={()=>{setSearchOpen(o=>{const next=!o;if(!next)setSearchQuery('');return next;});}} style={{ width:36,height:36,borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',background:searchOpen?'#7c3aed22':'transparent',border:`1px solid ${searchOpen?'#7c3aed55':'#2a2a2a'}`,color:searchOpen?'#a78bfa':'#444',cursor:'pointer' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </button>
             <button onClick={()=>setView(v=>v==='calendar'?'list':'calendar')} style={{ width:36,height:36,borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',background:view==='calendar'?'#7c3aed22':'transparent',border:`1px solid ${view==='calendar'?'#7c3aed55':'#2a2a2a'}`,color:view==='calendar'?'#a78bfa':'#444',cursor:'pointer',fontSize:15 }}>📅</button>
             <NotificationBell permission={permission} onRequest={requestPermission}/>
           </div>
         </div>
 
+        {/* Search row */}
+        {searchOpen&&(
+          <div style={{ padding:'8px 14px 0' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:8, background:'#1a1a1a', border:'1px solid #252525', borderRadius:10, padding:'0 12px' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink:0 }}><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} placeholder="Search tasks…" autoFocus
+                style={{ flex:1,background:'transparent',border:'none',outline:'none',color:'#e8e8e8',fontSize:14,padding:'10px 0' }} />
+              {searchQuery&&<button onClick={()=>setSearchQuery('')} style={{ background:'none',border:'none',color:'#555',cursor:'pointer',fontSize:16,flexShrink:0 }}>×</button>}
+            </div>
+          </div>
+        )}
+
         {/* Label chips */}
-        {allLabels.length>0&&(
+        {!searchActive&&(allLabels.length>0||tasks.some(t=>t.recurrence))&&(
           <div style={{ display:'flex', gap:6, padding:'8px 14px', overflowX:'auto', scrollbarWidth:'none', WebkitOverflowScrolling:'touch', msOverflowStyle:'none' }}>
+            {tasks.some(t=>t.recurrence)&&(
+              <button onClick={()=>setRecurringOnly(v=>!v)} style={{ flexShrink:0, display:'flex', alignItems:'center', gap:4, fontSize:12, fontWeight:600, padding:'4px 12px', borderRadius:12, whiteSpace:'nowrap', border:`1px solid ${recurringOnly?'#7c3aed55':'#2a2a2a'}`, background:recurringOnly?'#7c3aed22':'transparent', color:recurringOnly?'#a78bfa':'#555', cursor:'pointer' }}>↻ Recurring</button>
+            )}
             {labelFilter&&<button onClick={()=>setLabelFilter(null)} style={{ flexShrink:0, fontSize:12, padding:'3px 10px', borderRadius:12, border:'1px solid #2a2a2a', background:'transparent', color:'#555', cursor:'pointer' }}>× All</button>}
             {allLabels.map(l=>{const c=labelColor(l),active=labelFilter===l;return(
               <button key={l} onClick={()=>setLabelFilter(active?null:l)} style={{ flexShrink:0, fontSize:12, fontWeight:600, padding:'4px 12px', borderRadius:12, whiteSpace:'nowrap', border:`1px solid ${active?c.border:'#2a2a2a'}`, background:active?c.bg:'transparent', color:active?c.text:'#555', cursor:'pointer' }}>{l}</button>
@@ -513,20 +540,20 @@ export default function Todo() {
           {/* Empty state */}
           {rawTasks&&filtered.length===0&&(
             <div style={{ textAlign:'center',padding:'60px 20px' }}>
-              <div style={{ fontSize:44,marginBottom:12 }}>{filter==='Done'?'🎉':'✅'}</div>
-              <div style={{ fontSize:16,color:'#444',fontWeight:600 }}>{filter==='Done'?'Nothing completed yet':filter==='Today'?'No tasks today':'All clear'}</div>
-              <div style={{ fontSize:13,color:'#2e2e2e',marginTop:6 }}>{filter==='Today'?'Type above to add a task':labelFilter?`No tasks with label "${labelFilter}"`:'Add something above'}</div>
+              <div style={{ fontSize:44,marginBottom:12 }}>{searchActive?'🔍':recurringOnly?'↻':filter==='Done'?'🎉':'✅'}</div>
+              <div style={{ fontSize:16,color:'#444',fontWeight:600 }}>{searchActive?'No matches':recurringOnly?'No recurring tasks':filter==='Done'?'Nothing completed yet':filter==='Today'?'No tasks today':'All clear'}</div>
+              <div style={{ fontSize:13,color:'#2e2e2e',marginTop:6 }}>{searchActive?`Nothing found for "${searchQuery.trim()}"`:recurringOnly?'Set a repeat on a task to see it here':filter==='Today'?'Type above to add a task':labelFilter?`No tasks with label "${labelFilter}"`:'Add something above'}</div>
             </div>
           )}
 
           {/* Task rows */}
-          {filter==='Today'&&filtered.some(t=>isOverdue(t.date))&&(
+          {!searchActive&&filter==='Today'&&filtered.some(t=>isOverdue(t.date))&&(
             <div style={{ fontSize:11,fontWeight:700,color:'#ef4444',letterSpacing:1.2,textTransform:'uppercase',padding:'4px 2px 8px',opacity:0.7 }}>Overdue</div>
           )}
           {filtered.map((task,idx)=>{
             const prevOverdue = idx>0&&isOverdue(filtered[idx-1].date);
             const thisToday   = isToday(task.date);
-            const showTodayDivider = filter==='Today'&&thisToday&&prevOverdue;
+            const showTodayDivider = !searchActive&&filter==='Today'&&thisToday&&prevOverdue;
             return <>
               {showTodayDivider&&<div key={`div-${task.id}`} style={{ fontSize:11,fontWeight:700,color:'#a78bfa',letterSpacing:1.2,textTransform:'uppercase',padding:'12px 2px 8px',opacity:0.7 }}>Today</div>}
               <div key={task.id} style={{ display:'flex',alignItems:'flex-start',gap:12,padding:'13px 14px',marginBottom:6,background:'#1a1a1a',border:`1px solid ${isOverdue(task.date)?'#ef444433':task.recurrence?'#7c3aed14':'#1e1e1e'}`,borderRadius:12,opacity:task.completed?0.45:1,transition:'opacity 0.2s' }}>

@@ -1,4 +1,4 @@
-const CACHE = 'cosmos-v4';
+const CACHE = 'cosmos-v5';
 
 // Only cache truly static files (icons, manifest) — never HTML or JS chunks
 const PRECACHE = ['/icon.svg', '/manifest.json'];

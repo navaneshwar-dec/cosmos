@@ -278,7 +278,14 @@ export default function DatePicker({ value, recurrence, onChange, onChangeRecurr
           {REPEAT_OPTIONS.map(opt => (
             <button
               key={String(opt.value)}
-              onClick={() => { onChangeRecurrence(opt.value); setShowRepeat(false); }}
+              onClick={() => {
+                onChangeRecurrence(opt.value);
+                if (opt.value && !selected) {
+                  const d = new Date(); d.setHours(0, 0, 0, 0);
+                  onChange(d.toISOString());
+                }
+                setShowRepeat(false);
+              }}
               style={{
                 padding: '8px 10px', borderRadius: 8, border: 'none', textAlign: 'left',
                 background: recurrence === opt.value ? '#7c3aed22' : 'transparent',

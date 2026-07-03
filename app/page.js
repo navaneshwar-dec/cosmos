@@ -177,11 +177,48 @@ function UserMenu({ open, onClose, session, onAdmin }) {
 
 // ─── Main app ─────────────────────────────────────────────────────────────────
 
+const QUICK_LINKS = [
+  { label: 'IMDB Watchlist', href: 'https://www.imdb.com/watchlist', color: '#f5c518', icon: '⭐' },
+];
+
+function LinksSheet({ open, onClose }) {
+  return (
+    <BottomSheet open={open} onClose={onClose} title="Quick Links">
+      <div style={{ padding: '8px 20px 36px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {QUICK_LINKS.map(link => (
+          <a
+            key={link.href}
+            href={link.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={onClose}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 14,
+              padding: '15px 18px',
+              background: '#141414', border: `1px solid ${link.color}33`,
+              borderRadius: 14, color: link.color,
+              fontSize: 15, fontWeight: 600, textDecoration: 'none',
+            }}
+          >
+            <span style={{ fontSize: 22 }}>{link.icon}</span>
+            <div>
+              <div>{link.label}</div>
+              <div style={{ fontSize: 11, color: '#444', marginTop: 2, fontWeight: 400 }}>{link.href.replace('https://', '')}</div>
+            </div>
+            <svg style={{ marginLeft: 'auto', opacity: 0.3 }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </a>
+        ))}
+      </div>
+    </BottomSheet>
+  );
+}
+
 export default function Home() {
   const { data: session, status } = useSession();
   const [active, setActive]     = useState('todo');
   const [userMenu, setUserMenu] = useState(false);
   const [adminOpen, setAdmin]   = useState(false);
+  const [linksOpen, setLinks]   = useState(false);
 
   if (status === 'loading') return <LoadingScreen />;
   if (!session) return <Suspense fallback={<LoadingScreen />}><Login /></Suspense>;
@@ -225,6 +262,13 @@ export default function Home() {
           cosmos<span style={{ color: '#7c3aed' }}>.</span>
         </span>
         <div style={{ flex: 1 }} />
+        {/* Quick links */}
+        <button onClick={() => setLinks(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, color: '#444', display: 'flex', alignItems: 'center', marginRight: 4 }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+            <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+          </svg>
+        </button>
         {/* User avatar */}
         <button onClick={() => setUserMenu(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}>
           {session.user.image ? (
@@ -287,6 +331,7 @@ export default function Home() {
         session={session}
         onAdmin={() => setAdmin(true)}
       />
+      <LinksSheet open={linksOpen} onClose={() => setLinks(false)} />
       {isAdmin && <AdminPanel open={adminOpen} onClose={() => setAdmin(false)} />}
     </>
   );
