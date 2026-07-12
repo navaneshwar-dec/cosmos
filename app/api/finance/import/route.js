@@ -15,10 +15,10 @@ export async function POST(req) {
   const account = db.prepare('SELECT * FROM accounts WHERE id = ? AND user_id = ?').get(accountId, session.user.id);
   if (!account) return NextResponse.json({ error: 'Account not found' }, { status: 404 });
 
-  let headers, rows;
+  let headers, rows, headerRowConfident;
   try {
     const buffer = Buffer.from(await file.arrayBuffer());
-    ({ headers, rows } = parseWorkbook(buffer));
+    ({ headers, rows, headerRowConfident } = parseWorkbook(buffer));
   } catch (err) {
     return NextResponse.json({ error: 'Could not read file: ' + (err?.message ?? err) }, { status: 400 });
   }
@@ -35,5 +35,6 @@ export async function POST(req) {
     totalRows: rows.length,
     mapping,
     mappingSource: savedMapping && mappingIsValid(savedMapping, headers) ? 'saved' : 'guessed',
+    headerRowConfident,
   });
 }

@@ -135,8 +135,11 @@ function ImportSheet({ open, onClose, account, onImported }) {
     onImported?.();
   }
 
-  const mappingComplete = mapping && mapping.date && mapping.description &&
-    (mapping.amountMode === 'split' ? (mapping.debit || mapping.credit) : mapping.amount);
+  const mappingComplete = mapping && mapping.date && mapping.description && (
+    mapping.amountMode === 'split' ? (mapping.debit || mapping.credit) :
+    mapping.amountMode === 'indicator' ? (mapping.amount && mapping.indicator) :
+    mapping.amount
+  );
 
   return (
     <BottomSheet open={open} onClose={onClose} title={`Import — ${account?.name ?? ''}`}>
@@ -158,22 +161,32 @@ function ImportSheet({ open, onClose, account, onImported }) {
 
         {step === 'mapping' && preview && mapping && (
           <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#555' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#555', flexWrap: 'wrap' }}>
               <span>{preview.totalRows} rows found</span>
               <span style={{ padding: '2px 8px', borderRadius: 10, background: preview.mappingSource === 'saved' ? '#16a34a22' : '#7c3aed22', color: preview.mappingSource === 'saved' ? '#4ade80' : '#a78bfa', fontWeight: 700, fontSize: 11 }}>
                 {preview.mappingSource === 'saved' ? '✓ Remembered mapping' : 'Auto-guessed — please confirm'}
               </span>
             </div>
 
+            {!preview.headerRowConfident && (
+              <div style={{ fontSize: 12, color: '#fbbf24', background: '#f59e0b14', border: '1px solid #f59e0b33', borderRadius: 10, padding: '10px 12px', lineHeight: 1.5 }}>
+                Couldn't confidently find the header row in this file — double-check every column below before importing.
+              </div>
+            )}
+
             <ColumnSelect label="Date column" value={mapping.date} headers={preview.headers} onChange={v => setMapping(m => ({ ...m, date: v }))} />
             <ColumnSelect label="Description column" value={mapping.description} headers={preview.headers} onChange={v => setMapping(m => ({ ...m, description: v }))} />
 
             <div>
               <div style={FIELD_LABEL}>Amount format</div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                {[{ v: 'single', l: 'Single Amount column' }, { v: 'split', l: 'Separate Debit/Credit' }].map(o => (
+              <div style={{ display: 'flex', gap: 6 }}>
+                {[
+                  { v: 'single', l: 'Signed Amount' },
+                  { v: 'split', l: 'Debit + Credit columns' },
+                  { v: 'indicator', l: 'Amount + Dr/Cr label' },
+                ].map(o => (
                   <button key={o.v} onClick={() => setMapping(m => ({ ...m, amountMode: o.v }))} style={{
-                    flex: 1, padding: '10px 8px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                    flex: 1, padding: '10px 6px', borderRadius: 10, fontSize: 11, fontWeight: 700, cursor: 'pointer',
                     border: `1px solid ${mapping.amountMode === o.v ? '#7c3aed55' : '#2a2a2a'}`,
                     background: mapping.amountMode === o.v ? '#7c3aed22' : '#161616',
                     color: mapping.amountMode === o.v ? '#a78bfa' : '#666',
@@ -182,12 +195,19 @@ function ImportSheet({ open, onClose, account, onImported }) {
               </div>
             </div>
 
-            {mapping.amountMode === 'single' ? (
+            {mapping.amountMode === 'single' && (
               <ColumnSelect label="Amount column" value={mapping.amount} headers={preview.headers} onChange={v => setMapping(m => ({ ...m, amount: v }))} />
-            ) : (
+            )}
+            {mapping.amountMode === 'split' && (
               <div style={{ display: 'flex', gap: 10 }}>
                 <div style={{ flex: 1 }}><ColumnSelect label="Debit column" value={mapping.debit} headers={preview.headers} onChange={v => setMapping(m => ({ ...m, debit: v }))} /></div>
                 <div style={{ flex: 1 }}><ColumnSelect label="Credit column" value={mapping.credit} headers={preview.headers} onChange={v => setMapping(m => ({ ...m, credit: v }))} /></div>
+              </div>
+            )}
+            {mapping.amountMode === 'indicator' && (
+              <div style={{ display: 'flex', gap: 10 }}>
+                <div style={{ flex: 1 }}><ColumnSelect label="Amount column" value={mapping.amount} headers={preview.headers} onChange={v => setMapping(m => ({ ...m, amount: v }))} /></div>
+                <div style={{ flex: 1 }}><ColumnSelect label="Debit/Credit label column" value={mapping.indicator} headers={preview.headers} onChange={v => setMapping(m => ({ ...m, indicator: v }))} /></div>
               </div>
             )}
 
@@ -368,6 +388,72 @@ function TagSheet({ transaction, categories, onClose, onTagged }) {
   );
 }
 
+function CategorizeAIPanel({ onDone }) {
+  const [categorizing, setCategorizing] = useState(false);
+  const [progress, setProgress]         = useState(null);
+  const [error, setError]               = useState(null);
+
+  async function run() {
+    setCategorizing(true);
+    setError(null);
+    setProgress(null);
+    try {
+      const res = await fetch('/api/finance/categorize', { method: 'POST' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `Failed (${res.status})`);
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          const evt = JSON.parse(line);
+          if (evt.batchError) continue;
+          setProgress(evt);
+        }
+      }
+    } catch (err) {
+      setError(err.message || 'Categorization failed');
+    } finally {
+      setCategorizing(false);
+      onDone();
+    }
+  }
+
+  return (
+    <div style={{ marginBottom: 14, padding: '14px 16px', background: '#161616', border: '1px solid #2a2a2a', borderRadius: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <button onClick={run} disabled={categorizing} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', background: 'none', border: 'none', cursor: categorizing ? 'default' : 'pointer', textAlign: 'left', padding: 0, opacity: categorizing ? 0.6 : 1 }}>
+        <span style={{ fontSize: 20 }}>✨</span>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#e0e0e0' }}>{categorizing ? 'Categorizing…' : 'Categorize with AI'}</div>
+          <div style={{ fontSize: 12, color: '#555', marginTop: 2 }}>Runs locally via Ollama — nothing leaves your laptop</div>
+        </div>
+      </button>
+
+      {progress && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 6 }}>
+            <span style={{ color: categorizing ? '#a78bfa' : '#4ade80', fontWeight: 600 }}>{categorizing ? 'Classifying…' : '✓ Done'}</span>
+            <span style={{ color: '#666' }}>{progress.done}/{progress.total} · {progress.tagged} tagged</span>
+          </div>
+          <div style={{ height: 6, background: '#1a1a1a', borderRadius: 3, overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${progress.total ? (progress.done / progress.total) * 100 : 0}%`, background: categorizing ? '#7c3aed' : '#16a34a', borderRadius: 3, transition: 'width 0.2s' }} />
+          </div>
+        </div>
+      )}
+
+      {error && <div style={{ fontSize: 13, color: '#ef4444' }}>⚠ {error}</div>}
+    </div>
+  );
+}
+
 function ReviewTab() {
   const { data: queue, mutate } = useSWR('/api/finance/transactions?uncategorized=1', fetcher);
   const { data: categories } = useSWR('/api/finance/categories', fetcher);
@@ -389,6 +475,8 @@ function ReviewTab() {
           {[0.4, 0.6, 0.5].map((o, i) => <div key={i} style={{ height: 62, background: '#1a1a1a', borderRadius: 12, opacity: o }} />)}
         </div>
       )}
+
+      {queue && categories && <CategorizeAIPanel onDone={() => mutate()} />}
 
       {queue && queue.length === 0 && (
         <div style={{ textAlign: 'center', padding: '60px 20px' }}>

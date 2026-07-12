@@ -80,9 +80,11 @@ function LogSheet({ open, onClose, ex, day, existingLog, t, onSaved }) {
   const [notes, setNotes]         = useState('');
   const [unit, setUnit]           = useState('kg');
   const [saving, setSaving]       = useState(false);
+  const [error, setError]         = useState(null);
 
   useEffect(() => {
     if (!open || !ex) return;
+    setError(null);
     if (!startedAt.current) startedAt.current = new Date().toISOString();
 
     if (existingLog && existingLog.sets?.length > 0) {
@@ -130,8 +132,8 @@ function LogSheet({ open, onClose, ex, day, existingLog, t, onSaved }) {
 
   async function save() {
     setSaving(true);
+    setError(null);
     const topWeight = sets.filter(s => s.weight).sort((a, b) => parseFloat(b.weight) - parseFloat(a.weight))[0]?.weight;
-    if (topWeight) localStorage.setItem(`gym-weight-${ex.name}`, topWeight);
 
     const payload = {
       log_date:    new Date().toISOString().split('T')[0],
@@ -145,10 +147,18 @@ function LogSheet({ open, onClose, ex, day, existingLog, t, onSaved }) {
       notes:       notes.trim() || null,
     };
 
-    await fetch('/api/workout-logs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    setSaving(false);
-    onSaved(payload);
-    onClose();
+    try {
+      const res = await fetch('/api/workout-logs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      if (!res.ok) throw new Error(`Save failed (${res.status})`);
+      const saved = await res.json();
+      if (topWeight) localStorage.setItem(`gym-weight-${ex.name}`, topWeight);
+      setSaving(false);
+      onSaved(saved);
+      onClose();
+    } catch (err) {
+      setSaving(false);
+      setError(err.message || 'Could not save — check your connection and try again');
+    }
   }
 
   const doneSets  = sets.filter(s => s.completed).length;
@@ -286,6 +296,12 @@ function LogSheet({ open, onClose, ex, day, existingLog, t, onSaved }) {
               style={{ width: '100%', background: '#111', border: '1px solid #2a2a2a', borderRadius: 10, padding: '12px 14px', color: '#e0e0e0', fontSize: 14, resize: 'none', outline: 'none', fontFamily: 'inherit', lineHeight: 1.5 }}
             />
           </div>
+
+          {error && (
+            <div style={{ padding: '10px 14px', background: '#ef444414', border: '1px solid #ef444444', borderRadius: 10, color: '#ef4444', fontSize: 13 }}>
+              ⚠ {error}
+            </div>
+          )}
 
           {/* Save */}
           <button onClick={save} disabled={saving} style={{

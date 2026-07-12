@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
-import sql from '../../../lib/db';
+import sql, { initDb } from '../../../lib/db';
 import { auth } from '../../../auth';
 
 export async function GET(req) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+  await initDb();
   const { searchParams } = new URL(req.url);
   const date = searchParams.get('date');
   const from = searchParams.get('from');
@@ -35,6 +36,7 @@ export async function POST(req) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+  await initDb();
   const { log_date, day, exercise, started_at, ended_at, sets, skipped, skip_reason, notes } = await req.json();
   const uid = session.user.id;
 
@@ -68,6 +70,7 @@ export async function DELETE(req) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+  await initDb();
   const { searchParams } = new URL(req.url);
   const date     = searchParams.get('date');
   const exercise = searchParams.get('exercise');
