@@ -1,0 +1,14 @@
+name: Check due tasks and send push notifications
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  check-due:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hit check-due endpoint
+        run: |
+          curl -sf "${{ secrets.COSMOS_URL }}/api/push/check-due?secret=${{ secrets.PUSH_CRON_SECRET }}"

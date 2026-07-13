@@ -5,10 +5,11 @@ import dynamic from 'next/dynamic';
 import BottomSheet from '../components/BottomSheet';
 import Login from '../components/Login';
 
-const Todo     = dynamic(() => import('../components/Todo'),     { ssr: false });
-const Finances = dynamic(() => import('../components/Finances'), { ssr: false });
-const GymPlan  = dynamic(() => import('../components/GymPlan'), { ssr: false });
-const Prayers  = dynamic(() => import('../components/Prayers'), { ssr: false });
+const Todo      = dynamic(() => import('../components/Todo'),      { ssr: false });
+const Finances  = dynamic(() => import('../components/Finances'),  { ssr: false });
+const GymPlan   = dynamic(() => import('../components/GymPlan'),   { ssr: false });
+const Prayers   = dynamic(() => import('../components/Prayers'),   { ssr: false });
+const Assistant = dynamic(() => import('../components/Assistant'), { ssr: false });
 
 // ─── Loading skeleton ──────────────────────────────────────────────────────────
 
@@ -249,10 +250,11 @@ export default function Home() {
   const { prayerEnabled, isAdmin } = session.user;
 
   const tabs = [
-    { id: 'todo',     label: 'Tasks',   icon: TabTaskIcon },
-    { id: 'finances', label: 'Finance', icon: TabFinanceIcon },
-    { id: 'gym',      label: 'Gym',     icon: TabGymIcon },
+    { id: 'todo',      label: 'Tasks',     icon: TabTaskIcon },
+    { id: 'finances',  label: 'Finance',   icon: TabFinanceIcon },
+    { id: 'gym',       label: 'Gym',       icon: TabGymIcon },
     ...(prayerEnabled ? [{ id: 'prayers', label: 'ప్రార్థన', icon: TabPrayerIcon }] : []),
+    { id: 'assistant', label: 'Assistant', icon: TabAssistantIcon },
   ];
 
   return (
@@ -291,6 +293,7 @@ export default function Home() {
         {active === 'finances' && <Finances />}
         {active === 'gym'      && <GymPlan />}
         {active === 'prayers'  && prayerEnabled && <Prayers />}
+        {active === 'assistant' && <Assistant />}
       </main>
 
       <nav className="app-bottom-nav">
@@ -364,6 +367,17 @@ function TabGymIcon({ active }) {
       <line x1="3" y1="12" x2="21" y2="12" />
       <line x1="8" y1="6" x2="8" y2="18" />
       <line x1="16" y1="6" x2="16" y2="18" />
+    </svg>
+  );
+}
+
+function TabAssistantIcon({ active }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? '#a78bfa' : '#555'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2a3 3 0 013 3v6a3 3 0 01-6 0V5a3 3 0 013-3z" />
+      <path d="M19 10v2a7 7 0 01-14 0v-2" />
+      <line x1="12" y1="19" x2="12" y2="23" />
+      <line x1="8" y1="23" x2="16" y2="23" />
     </svg>
   );
 }

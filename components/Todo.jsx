@@ -76,6 +76,13 @@ function parseRecurrence(text) {
   return { type: null, phrase: null };
 }
 
+function parseLabels(text) {
+  const matches = [...text.matchAll(/#([a-zA-Z0-9-]+)/g)];
+  const labels = [...new Set(matches.map(m => m[1].toLowerCase()))];
+  const strippedText = text.replace(/#([a-zA-Z0-9-]+)/g, '').replace(/\s+/g, ' ').trim();
+  return { labels, strippedText };
+}
+
 function formatRecurrence(r) {
   if (!r) return null;
   const fixed = { daily: 'Daily', weekly: 'Weekly', weekdays: 'Weekdays', monthly: 'Monthly' };
@@ -86,14 +93,45 @@ function formatRecurrence(r) {
 
 // ─── useNotifications ─────────────────────────────────────────────────────────
 
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+}
+
+async function subscribeToPush() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  const registration = await navigator.serviceWorker.ready;
+  let subscription = await registration.pushManager.getSubscription();
+  if (!subscription) {
+    subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY),
+    });
+  }
+  await fetch('/api/push/subscribe', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(subscription.toJSON()),
+  });
+}
+
 function useNotifications(tasks) {
   const [permission, setPermission] = useState('default');
   const notified = useRef(new Set());
 
-  useEffect(() => { if (typeof Notification !== 'undefined') setPermission(Notification.permission); }, []);
+  useEffect(() => {
+    if (typeof Notification === 'undefined') return;
+    setPermission(Notification.permission);
+    if (Notification.permission === 'granted') subscribeToPush().catch(() => {});
+  }, []);
 
   async function requestPermission() {
-    const p = await Notification.requestPermission(); setPermission(p); return p;
+    const p = await Notification.requestPermission();
+    setPermission(p);
+    if (p === 'granted') await subscribeToPush().catch(() => {});
+    return p;
   }
 
   useEffect(() => {
@@ -374,6 +412,7 @@ export default function Todo() {
   const [editTask, setEditTask]       = useState(null);
   const [parsedDate, setParsedDate]   = useState(null);
   const [parsedRecur, setParsedRecur] = useState(null);
+  const [parsedLabels, setParsedLabels] = useState([]);
   const [chrono, setChrono]           = useState(null);
   const inputRef = useRef(null);
   const { permission, requestPermission } = useNotifications(tasks);
@@ -382,24 +421,27 @@ export default function Todo() {
   useEffect(()=>{ if(Array.isArray(rawTasks)) setTasks(sortTasks(rawTasks)); },[rawTasks]);
 
   useEffect(()=>{
-    if(!input.trim()){setParsedDate(null);setParsedRecur(null);return;}
+    if(!input.trim()){setParsedDate(null);setParsedRecur(null);setParsedLabels([]);return;}
     setParsedRecur(parseRecurrence(input).type);
+    setParsedLabels(parseLabels(input).labels);
     if(chrono){const r=chrono.parse(input);setParsedDate(r.length>0?r[0].date():null);}
   },[input,chrono]);
 
   async function addTask() {
     const raw=input.trim(); if(!raw) return;
     let text=raw, date=null;
+    const {labels, strippedText}=parseLabels(text);
+    text=strippedText;
     const {type:recurrence, phrase:recurPhrase}=parseRecurrence(text);
     if(recurPhrase) text=text.replace(recurPhrase,' ').replace(/\s+/g,' ').trim();
     if(chrono){const r=chrono.parse(text);if(r.length>0){date=r[0].date().toISOString();text=(text.slice(0,r[0].index)+text.slice(r[0].index+r[0].text.length)).replace(/\s+/g,' ').trim();}}
     text=text.replace(/\s*(,|by|at|on|in)\s*$/i,'').replace(/^(,|by|at|on|in)\s*/i,'').trim();
     if(recurrence&&!date){const d=new Date();d.setHours(0,0,0,0);date=d.toISOString();}
-    const opt={id:`tmp-${Date.now()}`,text,date,recurrence,labels:[],completed:false,created_at:new Date().toISOString()};
+    const opt={id:`tmp-${Date.now()}`,text,date,recurrence,labels,completed:false,created_at:new Date().toISOString()};
     setTasks(prev=>sortTasks([...prev,opt]));
-    setInput('');setParsedDate(null);setParsedRecur(null);
+    setInput('');setParsedDate(null);setParsedRecur(null);setParsedLabels([]);
     inputRef.current?.focus();
-    const res=await fetch('/api/tasks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text,date,recurrence:recurrence??null})});
+    const res=await fetch('/api/tasks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text,date,recurrence:recurrence??null,labels})});
     const saved=await res.json();
     setTasks(prev=>sortTasks(prev.map(t=>t.id===opt.id?saved:t)));
   }
@@ -445,7 +487,7 @@ export default function Todo() {
     return mf&&(!labelFilter||(t.labels||[]).includes(labelFilter));
   });
 
-  const hasPreview = parsedDate||parsedRecur;
+  const hasPreview = parsedDate||parsedRecur||parsedLabels.length>0;
 
   return (
     <>
@@ -510,7 +552,7 @@ export default function Todo() {
           <div style={{ display:'flex', alignItems:'center', padding:'2px 4px 2px 14px', gap:8 }}>
             <span style={{ color:'#333', fontSize:18, flexShrink:0 }}>+</span>
             <input ref={inputRef} value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addTask()}
-              placeholder="Add a task… try 'standup every day at 9am'"
+              placeholder="Add a task… try 'standup every day at 9am #work'"
               style={{ flex:1,background:'transparent',border:'none',outline:'none',color:'#e8e8e8',fontSize:15,padding:'14px 0' }} autoFocus
             />
             {input.trim()&&<button onClick={addTask} style={{ padding:'8px 16px',background:'#7c3aed',border:'none',borderRadius:10,color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',flexShrink:0 }}>Add</button>}
@@ -519,6 +561,7 @@ export default function Todo() {
             <div style={{ padding:'0 14px 10px', display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
               {parsedDate&&<span style={{ fontSize:12,color:'#a78bfa' }}>🗓 {formatDate(parsedDate)}</span>}
               {parsedRecur&&<span style={{ fontSize:11,fontWeight:700,background:'#7c3aed22',color:'#a78bfa',padding:'2px 8px',borderRadius:10 }}>↻ {formatRecurrence(parsedRecur)}</span>}
+              {parsedLabels.map(l=>{const c=labelColor(l);return <span key={l} style={{ fontSize:11,fontWeight:600,background:c.bg,color:c.text,border:`1px solid ${c.border}`,padding:'2px 8px',borderRadius:10 }}>{l}</span>;})}
             </div>
           )}
         </div>
