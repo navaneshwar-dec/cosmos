@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import BottomSheet from '../components/BottomSheet';
 import Login from '../components/Login';
 
+const MyDay     = dynamic(() => import('../components/MyDay'),     { ssr: false });
 const Todo      = dynamic(() => import('../components/Todo'),      { ssr: false });
 const Work      = dynamic(() => import('../components/Work'),      { ssr: false });
 const Finances  = dynamic(() => import('../components/Finances'),  { ssr: false });
@@ -217,7 +218,7 @@ function LinksSheet({ open, onClose }) {
 
 export default function Home() {
   const { data: session, status } = useSession();
-  const [active, setActive]     = useState('todo');
+  const [active, setActive]     = useState('myday');
   const [userMenu, setUserMenu] = useState(false);
   const [adminOpen, setAdmin]   = useState(false);
   const [linksOpen, setLinks]   = useState(false);
@@ -251,6 +252,7 @@ export default function Home() {
   const { prayerEnabled, isAdmin } = session.user;
 
   const tabs = [
+    { id: 'myday',     label: 'My Day',    icon: TabMyDayIcon },
     { id: 'todo',      label: 'Tasks',     icon: TabTaskIcon },
     { id: 'work',      label: 'Work',      icon: TabWorkIcon },
     { id: 'finances',  label: 'Finance',   icon: TabFinanceIcon },
@@ -291,6 +293,7 @@ export default function Home() {
       </header>
 
       <main className="app-content">
+        {active === 'myday'    && <MyDay />}
         {active === 'todo'     && <Todo />}
         {active === 'work'     && <Work />}
         {active === 'finances' && <Finances />}
@@ -370,6 +373,15 @@ function TabGymIcon({ active }) {
       <line x1="3" y1="12" x2="21" y2="12" />
       <line x1="8" y1="6" x2="8" y2="18" />
       <line x1="16" y1="6" x2="16" y2="18" />
+    </svg>
+  );
+}
+
+function TabMyDayIcon({ active }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? '#a78bfa' : '#555'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="13" r="4" />
+      <path d="M12 3v2M5.6 6.6l1.4 1.4M18.4 6.6l-1.4 1.4M3 13h2M19 13h2M2 20h20" />
     </svg>
   );
 }
