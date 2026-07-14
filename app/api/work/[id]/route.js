@@ -13,7 +13,7 @@ export async function PATCH(req, { params }) {
   const current = (await sql`SELECT * FROM work_items WHERE id = ${id} AND user_id = ${uid}`)[0];
   if (!current) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  const { title, notes, priority, deadline, assignee_id, completed } = await req.json();
+  const { title, notes, priority, deadline, assignee_id, completed, labels } = await req.json();
 
   await sql`
     UPDATE work_items SET
@@ -22,6 +22,7 @@ export async function PATCH(req, { params }) {
       priority    = ${priority    !== undefined ? priority                         : current.priority},
       deadline    = ${deadline    !== undefined ? (deadline ?? null)               : current.deadline},
       assignee_id = ${assignee_id !== undefined ? (assignee_id ?? null)            : current.assignee_id},
+      labels      = ${labels      !== undefined ? labels                           : current.labels},
       completed   = ${completed   !== undefined ? completed                        : current.completed}
     WHERE id = ${id} AND user_id = ${uid}
   `;

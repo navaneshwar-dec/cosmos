@@ -166,6 +166,52 @@ function PriorityPills({ value, onChange, big }) {
   );
 }
 
+// ─── Labels ─────────────────────────────────────────────────────────────────
+const LABEL_COLORS = [
+  { bg: '#7c3aed22', text: '#a78bfa', border: '#7c3aed55' },
+  { bg: '#0ea5e922', text: '#38bdf8', border: '#0ea5e955' },
+  { bg: '#16a34a22', text: '#4ade80', border: '#16a34a55' },
+  { bg: '#d9770622', text: '#fbbf24', border: '#d9770655' },
+  { bg: '#dc262622', text: '#f87171', border: '#dc262655' },
+  { bg: '#0d948822', text: '#2dd4bf', border: '#0d948855' },
+  { bg: '#ec489922', text: '#f472b6', border: '#ec489955' },
+];
+function labelColor(l) {
+  let h = 0; for (const c of l) h = (h * 31 + c.charCodeAt(0)) & 0xffff;
+  return LABEL_COLORS[h % LABEL_COLORS.length];
+}
+
+function LabelField({ labels, onChange, allLabels = [] }) {
+  const [draft, setDraft] = useState('');
+  function add(v) { const c = v.trim().toLowerCase().replace(/\s+/g, '-'); if (c && !labels.includes(c)) onChange([...labels, c]); setDraft(''); }
+  function onKey(e) {
+    if ((e.key === 'Enter' || e.key === ',') && draft.trim()) { e.preventDefault(); add(draft); }
+    if (e.key === 'Backspace' && !draft && labels.length > 0) onChange(labels.slice(0, -1));
+  }
+  const d = draft.trim().toLowerCase();
+  const suggestions = allLabels.filter(l => !labels.includes(l) && (d === '' || l.includes(d))).slice(0, 10);
+  return (
+    <div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', minHeight: 44, padding: '6px 12px', background: '#1a1a1a', border: '1px solid #252525', borderRadius: 10 }}>
+        {labels.map(l => { const c = labelColor(l); return (
+          <span key={l} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 600, padding: '4px 10px', borderRadius: 12, background: c.bg, color: c.text, border: `1px solid ${c.border}` }}>
+            {l}<button onClick={() => onChange(labels.filter(x => x !== l))} style={{ background: 'none', border: 'none', color: c.text, cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 0, opacity: 0.6 }}>×</button>
+          </span>
+        ); })}
+        <input value={draft} onChange={e => setDraft(e.target.value)} onKeyDown={onKey} onBlur={() => draft.trim() && add(draft)}
+          placeholder={labels.length === 0 ? 'Add labels…' : ''} style={{ border: 'none', outline: 'none', background: 'transparent', color: '#e8e8e8', fontSize: 14, minWidth: 90, flex: 1, height: 30 }} />
+      </div>
+      {suggestions.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+          {suggestions.map(l => { const c = labelColor(l); return (
+            <button key={l} onClick={() => add(l)} style={{ fontSize: 12, fontWeight: 600, padding: '4px 10px', borderRadius: 12, background: 'transparent', color: c.text, border: `1px dashed ${c.border}`, cursor: 'pointer' }}>+ {l}</button>
+          ); })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Assignee chip row (used in composer + edit sheet) ──────────────────────────
 function AssigneeChips({ value, people, onSelect, onAddPerson }) {
   const [adding, setAdding] = useState(false);
@@ -200,18 +246,19 @@ function AssigneeChips({ value, people, onSelect, onAddPerson }) {
 // ─── Edit sheet ──────────────────────────────────────────────────────────────
 const FIELD_LABEL = { fontSize: 11, fontWeight: 700, color: '#444', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 8 };
 
-function WorkEditSheet({ item, people, onClose, onSave, onDelete, onAddPerson }) {
+function WorkEditSheet({ item, people, onClose, onSave, onDelete, onAddPerson, allLabels = [] }) {
   const [title, setTitle]       = useState('');
   const [notes, setNotes]       = useState('');
   const [priority, setPriority] = useState(2);
   const [deadline, setDeadline] = useState(null);
   const [assignee, setAssignee] = useState(null);
+  const [labels, setLabels]     = useState([]);
   const [showCal, setShowCal]   = useState(false);
 
   useEffect(() => {
     if (!item) return;
     setTitle(item.title); setNotes(item.notes ?? ''); setPriority(item.priority);
-    setDeadline(item.deadline ?? null); setAssignee(item.assignee_id ?? null); setShowCal(false);
+    setDeadline(item.deadline ?? null); setAssignee(item.assignee_id ?? null); setLabels(item.labels ?? []); setShowCal(false);
   }, [item?.id]);
 
   function push(changes) { onSave(item.id, changes); }
@@ -248,6 +295,11 @@ function WorkEditSheet({ item, people, onClose, onSave, onDelete, onAddPerson })
           </div>
 
           <div>
+            <div style={FIELD_LABEL}>Labels</div>
+            <LabelField labels={labels} allLabels={allLabels} onChange={ls => { setLabels(ls); push({ labels: ls }); }} />
+          </div>
+
+          <div>
             <div style={FIELD_LABEL}>Notes</div>
             <textarea value={notes} onChange={e => setNotes(e.target.value)} onBlur={() => notes !== (item.notes ?? '') && push({ notes: notes.trim() || null })}
               placeholder="Add detail…" rows={3}
@@ -278,6 +330,7 @@ function relDays(dl) {
 function AgendaRow({ item, showAssignee, onToggle, onOpen, hideDate, now }) {
   const p = prio(item.priority);
   const dl = item.deadline;
+  const labels = item.labels || [];
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '11px 13px', marginBottom: 7,
       background: now ? 'rgba(239,68,68,0.10)' : '#131313',
@@ -285,9 +338,13 @@ function AgendaRow({ item, showAssignee, onToggle, onOpen, hideDate, now }) {
       borderRadius: 11, opacity: item.completed ? 0.45 : 1 }}>
       <button onClick={() => onToggle(item.id)} style={{ width: 21, height: 21, borderRadius: 6, border: `2px solid ${item.completed ? '#7c3aed' : '#333'}`, background: item.completed ? '#7c3aed' : 'transparent', cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 800 }}>{item.completed && '✓'}</button>
       <span style={{ fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 5, background: p.bg, color: p.color, flexShrink: 0 }}>{p.label}</span>
-      <button onClick={() => onOpen(item)} style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', padding: 0,
-        fontSize: 14, color: item.completed ? '#444' : '#e8e8e8', textDecoration: item.completed ? 'line-through' : 'none',
-        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</button>
+      <button onClick={() => onOpen(item)} style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 8,
+        overflow: 'hidden' }}>
+        <span style={{ fontSize: 14, color: item.completed ? '#444' : '#e8e8e8', textDecoration: item.completed ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</span>
+        {labels.map(l => { const c = labelColor(l); return (
+          <span key={l} style={{ flexShrink: 0, fontSize: 10, fontWeight: 600, padding: '1px 7px', borderRadius: 8, background: c.bg, color: c.text, border: `1px solid ${c.border}` }}>{l}</span>
+        ); })}
+      </button>
       {showAssignee && item.assignee_id && (
         <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#8a8a8a', flexShrink: 0 }}>
           <Avatar name={item.assignee_name} color={item.assignee_color} size={16} />{item.assignee_name}
@@ -312,10 +369,12 @@ export default function Work() {
   const [addPrio, setAddPrio] = useState(2);
   const [addDeadline, setAddDeadline] = useState(null);
   const [addAssignee, setAddAssignee] = useState(null);
-  const [expand, setExpand]   = useState(null);  // null | 'date' | 'who'
+  const [addLabels, setAddLabels] = useState([]);
+  const [expand, setExpand]   = useState(null);  // null | 'who' | 'tags'
   const [pickCal, setPickCal] = useState(false);
   const [view, setView]       = useState('mine');
   const [assigneeFilter, setAssigneeFilter] = useState(null);
+  const [labelFilter, setLabelFilter] = useState(null);
   const [editItem, setEditItem] = useState(null);
   const [showDone, setShowDone] = useState(false);
   const inputRef = useRef(null);
@@ -326,13 +385,13 @@ export default function Work() {
 
   async function addItem() {
     const title = input.trim(); if (!title) return;
-    const tmp = { id: `tmp-${Date.now()}`, title, priority: addPrio, deadline: addDeadline, assignee_id: addAssignee,
+    const tmp = { id: `tmp-${Date.now()}`, title, priority: addPrio, deadline: addDeadline, assignee_id: addAssignee, labels: addLabels,
       assignee_name: roster.find(p => p.id === addAssignee)?.name, assignee_color: roster.find(p => p.id === addAssignee)?.color,
       completed: false, created_at: new Date().toISOString() };
     setItems(prev => sortWork([...prev, tmp]));
     setInput(''); setExpand(null);
-    const payload = { title, priority: addPrio, deadline: addDeadline, assignee_id: addAssignee };
-    setAddDeadline(null); setAddAssignee(null);
+    const payload = { title, priority: addPrio, deadline: addDeadline, assignee_id: addAssignee, labels: addLabels };
+    setAddDeadline(null); setAddAssignee(null); setAddLabels([]);
     inputRef.current?.focus();
     const res = await fetch('/api/work', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     const saved = await res.json();
@@ -361,11 +420,15 @@ export default function Work() {
     return person;
   }
 
+  const allWorkLabels = [...new Set(items.flatMap(i => i.labels || []))].sort();
+
   const viewFiltered = items.filter(i => {
-    if (view === 'mine') return !i.assignee_id;
-    if (assigneeFilter === 'me') return !i.assignee_id;
-    if (assigneeFilter) return i.assignee_id === assigneeFilter;
-    return true;
+    const viewOk = view === 'mine' ? !i.assignee_id
+      : assigneeFilter === 'me' ? !i.assignee_id
+      : assigneeFilter ? i.assignee_id === assigneeFilter
+      : true;
+    const labelOk = !labelFilter || (i.labels || []).includes(labelFilter);
+    return viewOk && labelOk;
   });
   const active   = viewFiltered.filter(i => !i.completed);
   const doneList = viewFiltered.filter(i => i.completed);
@@ -412,10 +475,18 @@ export default function Work() {
             👤 {addAssigneeName ?? 'Assignee'}
             {addAssignee && <span onClick={e => { e.stopPropagation(); setAddAssignee(null); }} style={{ opacity: 0.6 }}>×</span>}
           </button>
+          <button onClick={() => setExpand(e => e === 'tags' ? null : 'tags')} style={metaBtn(addLabels.length > 0 || expand === 'tags')}>
+            🏷 {addLabels.length > 0 ? `${addLabels.length} label${addLabels.length > 1 ? 's' : ''}` : 'Labels'}
+          </button>
         </div>
         {expand === 'who' && (
           <div style={{ padding: '0 12px 12px' }}>
             <AssigneeChips value={addAssignee} people={roster} onAddPerson={addPerson} onSelect={id => { setAddAssignee(id); setExpand(null); }} />
+          </div>
+        )}
+        {expand === 'tags' && (
+          <div style={{ padding: '0 12px 12px' }}>
+            <LabelField labels={addLabels} allLabels={allWorkLabels} onChange={setAddLabels} />
           </div>
         )}
       </div>
@@ -446,6 +517,14 @@ export default function Work() {
                 <Avatar name={p.name} color={p.color} size={16} />{p.name}
               </button>
             ))}
+          </div>
+        )}
+        {allWorkLabels.length > 0 && (
+          <div style={{ display: 'flex', gap: 6, padding: '0 14px 10px', overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
+            {labelFilter && <button onClick={() => setLabelFilter(null)} style={pchip(false, '#6b7280')}>× All</button>}
+            {allWorkLabels.map(l => { const c = labelColor(l), on = labelFilter === l; return (
+              <button key={l} onClick={() => setLabelFilter(on ? null : l)} style={{ flexShrink: 0, fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 12, whiteSpace: 'nowrap', border: `1px solid ${on ? c.border : '#2a2a2a'}`, background: on ? c.bg : 'transparent', color: on ? c.text : '#666', cursor: 'pointer' }}>{l}</button>
+            ); })}
           </div>
         )}
       </div>
@@ -510,7 +589,7 @@ export default function Work() {
         </div>
       </div>
 
-      <WorkEditSheet item={editData} people={roster} onClose={() => setEditItem(null)} onSave={saveEdit} onDelete={del} onAddPerson={addPerson} />
+      <WorkEditSheet item={editData} people={roster} allLabels={allWorkLabels} onClose={() => setEditItem(null)} onSave={saveEdit} onDelete={del} onAddPerson={addPerson} />
     </>
   );
 }

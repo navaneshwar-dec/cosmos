@@ -22,18 +22,19 @@ export async function POST(req) {
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   await initDb();
-  const { title, priority, deadline, assignee_id, notes } = await req.json();
+  const { title, priority, deadline, assignee_id, notes, labels } = await req.json();
   if (!title?.trim()) return NextResponse.json({ error: 'Title required' }, { status: 400 });
 
   const [item] = await sql`
-    INSERT INTO work_items (user_id, title, priority, deadline, assignee_id, notes)
+    INSERT INTO work_items (user_id, title, priority, deadline, assignee_id, notes, labels)
     VALUES (
       ${session.user.id},
       ${title.trim()},
       ${priority ?? 2},
       ${deadline ?? null},
       ${assignee_id ?? null},
-      ${notes ?? null}
+      ${notes ?? null},
+      ${labels ?? []}
     )
     RETURNING *
   `;
