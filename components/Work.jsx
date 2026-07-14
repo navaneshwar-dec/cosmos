@@ -253,7 +253,15 @@ function WorkEditSheet({ item, people, onClose, onSave, onDelete, onAddPerson })
               style={{ width: '100%', background: '#1a1a1a', border: '1px solid #252525', borderRadius: 10, padding: '12px 14px', color: '#e0e0e0', fontSize: 14, resize: 'none', outline: 'none', fontFamily: 'inherit', lineHeight: 1.5 }} />
           </div>
 
-          <button onClick={() => { onDelete(item.id); onClose(); }} style={{ padding: '13px', background: '#1a0505', border: '1px solid #ef444433', borderRadius: 12, color: '#ef4444', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Delete</button>
+          <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+            <button onClick={() => {
+              if (title.trim() && title !== item.title) push({ title });
+              if (notes !== (item.notes ?? '')) push({ notes: notes.trim() || null });
+              onClose();
+            }} style={{ flex: 1, padding: '14px', background: '#7c3aed', border: 'none', borderRadius: 12, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>Done</button>
+            <button onClick={() => { onDelete(item.id); onClose(); }} title="Delete" style={{ padding: '14px 18px', background: '#1a0505', border: '1px solid #ef444433', borderRadius: 12, color: '#ef4444', fontSize: 14, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>Delete</button>
+          </div>
+          <div style={{ textAlign: 'center', fontSize: 11, color: '#3a3a3a', marginTop: 2 }}>Changes save automatically</div>
         </div>
       )}
     </BottomSheet>
