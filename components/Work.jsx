@@ -1,7 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import useSWR from 'swr';
-import DatePicker from './DatePicker';
 import BottomSheet from './BottomSheet';
 
 const fetcher = url => fetch(url).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
@@ -33,6 +32,97 @@ function quickDate(kind) {
   else if (kind === 'weekend') { const dts = (6 - d.getDay() + 7) % 7 || 7; d.setDate(d.getDate() + dts); }
   else if (kind === 'nextweek') { const dtm = (8 - d.getDay()) % 7 || 7; d.setDate(d.getDate() + dtm); }
   return d.toISOString();
+}
+
+// ─── Deadline picker — near-term day, time-forward (work deadlines are "by X today/tmrw") ──
+const QUICK_TIMES = [
+  ['09:00', '🌅', 'Morning'],
+  ['12:00', '☀️', 'Noon'],
+  ['15:00', '🕒', '3 PM'],
+  ['17:00', '🕔', '5 PM · EOD'],
+  ['20:00', '🌙', 'Evening'],
+];
+
+function DeadlinePicker({ value, onChange }) {
+  const base = value ? new Date(value) : null;
+  const baseDayStr = base ? base.toDateString() : null;
+  const hasTime = !!(base && (base.getHours() || base.getMinutes()));
+  const timeStr = hasTime ? `${String(base.getHours()).padStart(2, '0')}:${String(base.getMinutes()).padStart(2, '0')}` : '';
+
+  // next 5 days as chips, then a weekend chip
+  const days = [];
+  for (let k = 0; k < 5; k++) {
+    const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + k);
+    days.push({ d, label: k === 0 ? 'Today' : k === 1 ? 'Tomorrow' : d.toLocaleDateString([], { weekday: 'short' }), num: d.getDate() });
+  }
+  const sat = new Date(); sat.setHours(0, 0, 0, 0);
+  const ds = (6 - sat.getDay() + 7) % 7; sat.setDate(sat.getDate() + ds);
+  const weekendSelected = base && sat.toDateString() === baseDayStr;
+
+  function applyDay(d) {
+    const nd = new Date(d);
+    if (hasTime) nd.setHours(base.getHours(), base.getMinutes(), 0, 0);
+    onChange(nd.toISOString());
+  }
+  function applyTime(t) {
+    const d = base ? new Date(base) : (() => { const x = new Date(); x.setHours(0, 0, 0, 0); return x; })();
+    const [h, m] = t.split(':').map(Number); d.setHours(h, m, 0, 0);
+    onChange(d.toISOString());
+  }
+  function clearTime() { if (!base) return; const d = new Date(base); d.setHours(0, 0, 0, 0); onChange(d.toISOString()); }
+
+  const chip = (active, color = '#7c3aed') => ({
+    flexShrink: 0, padding: '8px 14px', borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
+    border: `1px solid ${active ? color + '88' : '#262626'}`, background: active ? color + '22' : 'transparent', color: active ? color : '#999',
+  });
+  const label = { fontSize: 11, fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 9 };
+
+  return (
+    <div style={{ padding: '6px 18px 8px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {/* Day — compact quick chips */}
+      <div>
+        <div style={label}>Day</div>
+        <div style={{ display: 'flex', gap: 7, overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', paddingBottom: 2 }}>
+          {days.map(({ d, label: l }) => (
+            <button key={l} onClick={() => applyDay(d)} style={chip(d.toDateString() === baseDayStr, '#0ea5e9')}>{l}</button>
+          ))}
+          <button onClick={() => applyDay(sat)} style={chip(weekendSelected, '#0ea5e9')}>Weekend</button>
+        </div>
+      </div>
+
+      {/* Time — the emphasis */}
+      <div>
+        <div style={label}>Time {hasTime && <span style={{ color: '#a78bfa', marginLeft: 4 }}>{formatDeadline(base).split(' ').slice(-1)}</span>}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(96px, 1fr))', gap: 8 }}>
+          {QUICK_TIMES.map(([t, icon, l]) => {
+            const active = timeStr === t;
+            return (
+              <button key={t} onClick={() => applyTime(t)} style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '14px 8px', borderRadius: 14, cursor: 'pointer',
+                border: `1.5px solid ${active ? '#7c3aed' : '#262626'}`, background: active ? '#7c3aed1f' : '#161616',
+                color: active ? '#a78bfa' : '#aaa', fontSize: 13, fontWeight: 700,
+              }}>
+                <span style={{ fontSize: 20 }}>{icon}</span>{l}
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginTop: 10, alignItems: 'center' }}>
+          <input type="time" value={timeStr} onChange={e => e.target.value && applyTime(e.target.value)}
+            style={{ flex: 1, background: '#161616', border: '1px solid #262626', borderRadius: 10, padding: '11px 12px', color: '#e8e8e8', fontSize: 15, outline: 'none', colorScheme: 'dark' }} />
+          <button onClick={clearTime} style={chip(!hasTime && !!base, '#6b7280')}>All day</button>
+        </div>
+      </div>
+
+      {/* Other date fallback + clear */}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', borderTop: '1px solid #1c1c1c', paddingTop: 14 }}>
+        <input type="date" value={base ? `${base.getFullYear()}-${String(base.getMonth() + 1).padStart(2, '0')}-${String(base.getDate()).padStart(2, '0')}` : ''}
+          onChange={e => { if (e.target.value) { const [y, m, dd] = e.target.value.split('-').map(Number); applyDay(new Date(y, m - 1, dd)); } }}
+          style={{ flex: 1, background: '#161616', border: '1px solid #262626', borderRadius: 10, padding: '11px 12px', color: base ? '#e8e8e8' : '#555', fontSize: 14, outline: 'none', colorScheme: 'dark' }} />
+        {base && <button onClick={() => onChange(null)} style={chip(false, '#ef4444')}>Clear</button>}
+      </div>
+    </div>
+  );
 }
 
 // ─── sort: P1 pinned top, then deadline asc (nulls last), then priority ─────────
@@ -144,8 +234,8 @@ function WorkEditSheet({ item, people, onClose, onSave, onDelete, onAddPerson })
               background: '#1a1a1a', border: `1px solid ${deadline ? '#7c3aed44' : '#252525'}`, color: deadline ? '#a78bfa' : '#555', fontSize: 14, fontWeight: 600,
             }}>{deadline ? formatDeadline(deadline) : 'Set a deadline'}{deadline && <span onClick={e => { e.stopPropagation(); setDeadline(null); push({ deadline: null }); }} style={{ float: 'right', opacity: 0.5 }}>×</span>}</button>
             {showCal && (
-              <div style={{ marginTop: 8, background: '#161616', border: '1px solid #2a2a2a', borderRadius: 12, overflow: 'hidden' }}>
-                <DatePicker value={deadline} onChange={v => { setDeadline(v); push({ deadline: v }); }} fullWidth />
+              <div style={{ marginTop: 8, background: '#141414', border: '1px solid #2a2a2a', borderRadius: 12, overflow: 'hidden', paddingBottom: 6 }}>
+                <DeadlinePicker value={deadline} onChange={v => { setDeadline(v); push({ deadline: v }); }} />
               </div>
             )}
           </div>
@@ -305,7 +395,7 @@ export default function Work() {
           {input.trim() && <button onClick={addItem} style={{ padding: '9px 18px', background: '#7c3aed', border: 'none', borderRadius: 10, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>Add</button>}
         </div>
         <div style={{ display: 'flex', gap: 8, padding: '0 12px 10px' }}>
-          <button onClick={() => setExpand(e => e === 'date' ? null : 'date')} style={metaBtn(addDeadline || expand === 'date')}>
+          <button onClick={() => { setExpand(null); setPickCal(true); }} style={metaBtn(!!addDeadline)}>
             🗓 {addDeadline ? formatDeadline(addDeadline) : 'Deadline'}
             {addDeadline && <span onClick={e => { e.stopPropagation(); setAddDeadline(null); }} style={{ opacity: 0.6 }}>×</span>}
           </button>
@@ -314,14 +404,6 @@ export default function Work() {
             {addAssignee && <span onClick={e => { e.stopPropagation(); setAddAssignee(null); }} style={{ opacity: 0.6 }}>×</span>}
           </button>
         </div>
-        {expand === 'date' && (
-          <div style={{ display: 'flex', gap: 6, padding: '0 12px 12px', flexWrap: 'wrap' }}>
-            {[['Today', 'today'], ['Tomorrow', 'tomorrow'], ['Weekend', 'weekend'], ['Next wk', 'nextweek']].map(([label, kind]) => (
-              <button key={kind} onClick={() => { setAddDeadline(quickDate(kind)); setExpand(null); }} style={pchip(false, '#0ea5e9')}>{label}</button>
-            ))}
-            <button onClick={() => { setPickCal(true); }} style={pchip(false, '#7c3aed')}>📅 Pick…</button>
-          </div>
-        )}
         {expand === 'who' && (
           <div style={{ padding: '0 12px 12px' }}>
             <AssigneeChips value={addAssignee} people={roster} onAddPerson={addPerson} onSelect={id => { setAddAssignee(id); setExpand(null); }} />
@@ -360,8 +442,9 @@ export default function Work() {
       </div>
 
       <BottomSheet open={pickCal} onClose={() => setPickCal(false)} title="Deadline">
-        <div style={{ padding: '4px 0 12px' }}>
-          <DatePicker value={addDeadline} onChange={v => setAddDeadline(v)} fullWidth />
+        <DeadlinePicker value={addDeadline} onChange={v => setAddDeadline(v)} />
+        <div style={{ padding: '4px 18px 20px' }}>
+          <button onClick={() => setPickCal(false)} style={{ width: '100%', padding: '13px', background: '#7c3aed', border: 'none', borderRadius: 12, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>Done</button>
         </div>
       </BottomSheet>
 
