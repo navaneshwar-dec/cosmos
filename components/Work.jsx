@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import useSWR from 'swr';
 import BottomSheet from './BottomSheet';
+import Modal from './Modal';
 
 const fetcher = url => fetch(url).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
 
@@ -216,7 +217,7 @@ function WorkEditSheet({ item, people, onClose, onSave, onDelete, onAddPerson })
   function push(changes) { onSave(item.id, changes); }
 
   return (
-    <BottomSheet open={!!item} onClose={onClose} title="Edit">
+    <Modal open={!!item} onClose={onClose} title="Edit">
       {item && (
         <div style={{ padding: '12px 20px 36px', display: 'flex', flexDirection: 'column', gap: 18 }}>
           <input value={title} onChange={e => setTitle(e.target.value)} onBlur={() => title.trim() && title !== item.title && push({ title })}
@@ -264,7 +265,7 @@ function WorkEditSheet({ item, people, onClose, onSave, onDelete, onAddPerson })
           <div style={{ textAlign: 'center', fontSize: 11, color: '#3a3a3a', marginTop: 2 }}>Changes save automatically</div>
         </div>
       )}
-    </BottomSheet>
+    </Modal>
   );
 }
 
