@@ -101,6 +101,11 @@ button { -webkit-appearance: none; }
   .todo-scroll-pad {
     padding-bottom: 120px;
   }
+
+  /* Work composer is taller (priority + input + meta rows) — clear it */
+  .work-scroll-pad {
+    padding-bottom: 200px;
+  }
 }
 
 /* ---------- gym responsive ---------- */

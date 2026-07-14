@@ -259,7 +259,8 @@ export default function DatePicker({ value, recurrence, onChange, onChangeRecurr
         </div>
       )}
 
-      {/* Repeat */}
+      {/* Repeat — only when a recurrence handler is provided (e.g. tasks, not work deadlines) */}
+      {onChangeRecurrence && (<>
       <button
         onClick={() => setShowRepeat(r => !r)}
         style={{
@@ -301,6 +302,7 @@ export default function DatePicker({ value, recurrence, onChange, onChangeRecurr
           ))}
         </div>
       )}
+      </>)}
     </div>
   );
 }

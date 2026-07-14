@@ -157,30 +157,42 @@ function useNotifications(tasks) {
 
 // ─── LabelInput ───────────────────────────────────────────────────────────────
 
-function LabelInput({ labels, onChange }) {
+function LabelInput({ labels, onChange, allLabels = [] }) {
   const [draft, setDraft] = useState('');
   function add(v) { const c = v.trim().toLowerCase().replace(/\s+/g,'-'); if (c && !labels.includes(c)) onChange([...labels,c]); setDraft(''); }
   function onKey(e) {
     if ((e.key==='Enter'||e.key===',') && draft.trim()) { e.preventDefault(); add(draft); }
     if (e.key==='Backspace' && !draft && labels.length>0) onChange(labels.slice(0,-1));
   }
+  const d = draft.trim().toLowerCase();
+  // Existing labels not yet on this task — typing filters them, empty shows all. Tap to reuse the exact existing label.
+  const suggestions = allLabels.filter(l => !labels.includes(l) && (d === '' || l.includes(d))).slice(0, 10);
   return (
-    <div style={{ display:'flex', flexWrap:'wrap', gap:6, alignItems:'center', minHeight:48, padding:'6px 12px', background:'#111', border:'1px solid #2a2a2a', borderRadius:10 }}>
-      {labels.map(l => { const c=labelColor(l); return (
-        <span key={l} style={{ display:'flex', alignItems:'center', gap:4, fontSize:13, fontWeight:600, padding:'4px 10px', borderRadius:12, background:c.bg, color:c.text, border:`1px solid ${c.border}` }}>
-          {l}
-          <button onClick={() => onChange(labels.filter(x=>x!==l))} style={{ background:'none', border:'none', color:c.text, cursor:'pointer', fontSize:16, lineHeight:1, padding:0, opacity:0.6 }}>×</button>
-        </span>
-      ); })}
-      <input value={draft} onChange={e=>setDraft(e.target.value)} onKeyDown={onKey} onBlur={()=>draft.trim()&&add(draft)}
-        placeholder={labels.length===0?'Add labels…':''} style={{ border:'none', outline:'none', background:'transparent', color:'#e8e8e8', fontSize:14, minWidth:90, flex:1, height:32 }} />
+    <div>
+      <div style={{ display:'flex', flexWrap:'wrap', gap:6, alignItems:'center', minHeight:48, padding:'6px 12px', background:'#111', border:'1px solid #2a2a2a', borderRadius:10 }}>
+        {labels.map(l => { const c=labelColor(l); return (
+          <span key={l} style={{ display:'flex', alignItems:'center', gap:4, fontSize:13, fontWeight:600, padding:'4px 10px', borderRadius:12, background:c.bg, color:c.text, border:`1px solid ${c.border}` }}>
+            {l}
+            <button onClick={() => onChange(labels.filter(x=>x!==l))} style={{ background:'none', border:'none', color:c.text, cursor:'pointer', fontSize:16, lineHeight:1, padding:0, opacity:0.6 }}>×</button>
+          </span>
+        ); })}
+        <input value={draft} onChange={e=>setDraft(e.target.value)} onKeyDown={onKey} onBlur={()=>draft.trim()&&add(draft)}
+          placeholder={labels.length===0?'Add labels…':''} style={{ border:'none', outline:'none', background:'transparent', color:'#e8e8e8', fontSize:14, minWidth:90, flex:1, height:32 }} />
+      </div>
+      {suggestions.length>0 && (
+        <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginTop:8 }}>
+          {suggestions.map(l => { const c=labelColor(l); return (
+            <button key={l} onClick={()=>add(l)} style={{ fontSize:12, fontWeight:600, padding:'4px 10px', borderRadius:12, background:'transparent', color:c.text, border:`1px dashed ${c.border}`, cursor:'pointer' }}>+ {l}</button>
+          ); })}
+        </div>
+      )}
     </div>
   );
 }
 
 // ─── EditSheet ────────────────────────────────────────────────────────────────
 
-function EditSheet({ task, open, onSave, onClose }) {
+function EditSheet({ task, open, onSave, onClose, allLabels = [] }) {
   const [text, setText]             = useState('');
   const [date, setDate]             = useState(null);
   const [recurrence, setRecurrence] = useState(null);
@@ -228,7 +240,7 @@ function EditSheet({ task, open, onSave, onClose }) {
 
             <div>
               <div style={{ fontSize:11, fontWeight:700, color:'#444', textTransform:'uppercase', letterSpacing:1.5, marginBottom:8 }}>Labels</div>
-              <LabelInput labels={labels} onChange={setLabels} />
+              <LabelInput labels={labels} onChange={setLabels} allLabels={allLabels} />
             </div>
 
             <div style={{ display:'flex', gap:10 }}>
@@ -484,7 +496,8 @@ export default function Todo() {
       return t.text.toLowerCase().includes(q)||(t.labels||[]).some(l=>l.toLowerCase().includes(q));
     }
     const mf = filter==='All'?!t.completed:filter==='Today'?!t.completed&&(isToday(t.date)||isOverdue(t.date)):filter==='Upcoming'?!t.completed&&isUpcoming(t.date):t.completed;
-    return mf&&(!labelFilter||(t.labels||[]).includes(labelFilter));
+    const lf = !labelFilter || (labelFilter==='__none__' ? (t.labels||[]).length===0 : (t.labels||[]).includes(labelFilter));
+    return mf&&lf;
   });
 
   const hasPreview = parsedDate||parsedRecur||parsedLabels.length>0;
@@ -533,6 +546,9 @@ export default function Todo() {
               <button onClick={()=>setRecurringOnly(v=>!v)} style={{ flexShrink:0, display:'flex', alignItems:'center', gap:4, fontSize:12, fontWeight:600, padding:'4px 12px', borderRadius:12, whiteSpace:'nowrap', border:`1px solid ${recurringOnly?'#7c3aed55':'#2a2a2a'}`, background:recurringOnly?'#7c3aed22':'transparent', color:recurringOnly?'#a78bfa':'#555', cursor:'pointer' }}>↻ Recurring</button>
             )}
             {labelFilter&&<button onClick={()=>setLabelFilter(null)} style={{ flexShrink:0, fontSize:12, padding:'3px 10px', borderRadius:12, border:'1px solid #2a2a2a', background:'transparent', color:'#555', cursor:'pointer' }}>× All</button>}
+            {allLabels.length>0&&(()=>{const active=labelFilter==='__none__';return(
+              <button onClick={()=>setLabelFilter(active?null:'__none__')} style={{ flexShrink:0, fontSize:12, fontWeight:600, padding:'4px 12px', borderRadius:12, whiteSpace:'nowrap', border:`1px solid ${active?'#7c3aed55':'#2a2a2a'}`, background:active?'#7c3aed22':'transparent', color:active?'#a78bfa':'#555', cursor:'pointer' }}>⊘ No label</button>
+            );})()}
             {allLabels.map(l=>{const c=labelColor(l),active=labelFilter===l;return(
               <button key={l} onClick={()=>setLabelFilter(active?null:l)} style={{ flexShrink:0, fontSize:12, fontWeight:600, padding:'4px 12px', borderRadius:12, whiteSpace:'nowrap', border:`1px solid ${active?c.border:'#2a2a2a'}`, background:active?c.bg:'transparent', color:active?c.text:'#555', cursor:'pointer' }}>{l}</button>
             );})}
@@ -631,7 +647,7 @@ export default function Todo() {
       )}
 
       {/* ── Edit bottom sheet ── */}
-      <EditSheet task={editTask} open={!!editTask} onSave={saveEdit} onClose={()=>setEditTask(null)}/>
+      <EditSheet task={editTask} open={!!editTask} onSave={saveEdit} onClose={()=>setEditTask(null)} allLabels={allLabels}/>
     </>
   );
 }

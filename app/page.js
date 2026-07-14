@@ -6,6 +6,7 @@ import BottomSheet from '../components/BottomSheet';
 import Login from '../components/Login';
 
 const Todo      = dynamic(() => import('../components/Todo'),      { ssr: false });
+const Work      = dynamic(() => import('../components/Work'),      { ssr: false });
 const Finances  = dynamic(() => import('../components/Finances'),  { ssr: false });
 const GymPlan   = dynamic(() => import('../components/GymPlan'),   { ssr: false });
 const Prayers   = dynamic(() => import('../components/Prayers'),   { ssr: false });
@@ -251,6 +252,7 @@ export default function Home() {
 
   const tabs = [
     { id: 'todo',      label: 'Tasks',     icon: TabTaskIcon },
+    { id: 'work',      label: 'Work',      icon: TabWorkIcon },
     { id: 'finances',  label: 'Finance',   icon: TabFinanceIcon },
     { id: 'gym',       label: 'Gym',       icon: TabGymIcon },
     ...(prayerEnabled ? [{ id: 'prayers', label: 'ప్రార్థన', icon: TabPrayerIcon }] : []),
@@ -290,6 +292,7 @@ export default function Home() {
 
       <main className="app-content">
         {active === 'todo'     && <Todo />}
+        {active === 'work'     && <Work />}
         {active === 'finances' && <Finances />}
         {active === 'gym'      && <GymPlan />}
         {active === 'prayers'  && prayerEnabled && <Prayers />}
@@ -367,6 +370,15 @@ function TabGymIcon({ active }) {
       <line x1="3" y1="12" x2="21" y2="12" />
       <line x1="8" y1="6" x2="8" y2="18" />
       <line x1="16" y1="6" x2="16" y2="18" />
+    </svg>
+  );
+}
+
+function TabWorkIcon({ active }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? '#a78bfa' : '#555'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="7" width="20" height="14" rx="2" />
+      <path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2" />
     </svg>
   );
 }
