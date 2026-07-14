@@ -170,35 +170,35 @@ function WorkEditSheet({ item, people, onClose, onSave, onDelete, onAddPerson })
   );
 }
 
-// ─── Row — priority-forward, distinct from the flat todo list ──────────────────
-function WorkRow({ item, showAssignee, onToggle, onOpen }) {
+function relDays(dl) {
+  const d = Math.floor((Date.now() - new Date(dl)) / 86400000);
+  return d <= 0 ? 'today' : `${d}d ago`;
+}
+
+// ─── Agenda row — flat, time-bucketed (the section supplies the "when") ─────────
+function AgendaRow({ item, showAssignee, onToggle, onOpen, hideDate, now }) {
   const p = prio(item.priority);
   const dl = item.deadline;
-  const p1 = item.priority === 1;
-  const dlColor = isOverdue(dl) ? '#ef4444' : isToday(dl) ? '#a78bfa' : '#777';
   return (
-    <div style={{ display: 'flex', marginBottom: 8, background: p1 ? '#1b0f0f' : '#151515', border: `1px solid ${p1 ? '#ef444440' : isOverdue(dl) ? '#ef444422' : '#1f1f1f'}`, borderRadius: 12, overflow: 'hidden', opacity: item.completed ? 0.45 : 1 }}>
-      <div style={{ width: 4, background: p.color, flexShrink: 0 }} />
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12, padding: '12px 12px 12px 12px', minWidth: 0 }}>
-        <button onClick={() => onToggle(item.id)} style={{ width: 22, height: 22, borderRadius: 7, border: `2px solid ${item.completed ? '#7c3aed' : '#333'}`, background: item.completed ? '#7c3aed' : 'transparent', cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 12, fontWeight: 800 }}>{item.completed && '✓'}</button>
-
-        <button onClick={() => onOpen(item)} style={{ flex: 1, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: dl || (showAssignee && item.assignee_id) ? 5 : 0 }}>
-            <span style={{ fontSize: 10, fontWeight: 800, padding: '2px 6px', borderRadius: 5, background: p.bg, color: p.color, flexShrink: 0 }}>{p.label}</span>
-            <span style={{ fontSize: 15, color: item.completed ? '#444' : '#e8e8e8', textDecoration: item.completed ? 'line-through' : 'none', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</span>
-          </div>
-          {(dl || (showAssignee && item.assignee_id)) && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingLeft: 2 }}>
-              {dl && <span style={{ fontSize: 12, fontWeight: 600, color: dlColor }}>{isOverdue(dl) ? '⚠ ' : '🗓 '}{formatDeadline(dl)}</span>}
-              {showAssignee && item.assignee_id && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#888' }}>
-                  <Avatar name={item.assignee_name} color={item.assignee_color} size={16} />{item.assignee_name}
-                </span>
-              )}
-            </div>
-          )}
-        </button>
-      </div>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '11px 13px', marginBottom: 7,
+      background: now ? 'rgba(239,68,68,0.10)' : '#131313',
+      border: `1px solid ${now ? 'rgba(239,68,68,0.30)' : isOverdue(dl) ? '#ef444422' : '#1c1c1c'}`,
+      borderRadius: 11, opacity: item.completed ? 0.45 : 1 }}>
+      <button onClick={() => onToggle(item.id)} style={{ width: 21, height: 21, borderRadius: 6, border: `2px solid ${item.completed ? '#7c3aed' : '#333'}`, background: item.completed ? '#7c3aed' : 'transparent', cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 800 }}>{item.completed && '✓'}</button>
+      <span style={{ fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 5, background: p.bg, color: p.color, flexShrink: 0 }}>{p.label}</span>
+      <button onClick={() => onOpen(item)} style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', padding: 0,
+        fontSize: 14, color: item.completed ? '#444' : '#e8e8e8', textDecoration: item.completed ? 'line-through' : 'none',
+        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</button>
+      {showAssignee && item.assignee_id && (
+        <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#8a8a8a', flexShrink: 0 }}>
+          <Avatar name={item.assignee_name} color={item.assignee_color} size={16} />{item.assignee_name}
+        </span>
+      )}
+      {dl && !hideDate && (
+        <span style={{ fontSize: 12, fontWeight: 600, color: isOverdue(dl) ? '#ef4444' : isToday(dl) ? '#a78bfa' : '#8a8a8a', flexShrink: 0 }}>
+          {isOverdue(dl) ? `⚠ ${relDays(dl)}` : formatDeadline(dl)}
+        </span>
+      )}
     </div>
   );
 }
@@ -276,6 +276,61 @@ export default function Work() {
   const editData = editItem ? items.find(i => i.id === editItem.id) ?? editItem : null;
   const addAssigneeName = roster.find(p => p.id === addAssignee)?.name;
 
+  // time buckets for non-P1 active items (rest is already deadline-sorted)
+  const weekEnd = new Date(); weekEnd.setHours(23, 59, 59, 0); weekEnd.setDate(weekEnd.getDate() + 7);
+  const bucketOf = i => {
+    if (!i.deadline) return 'nodate';
+    if (isOverdue(i.deadline)) return 'overdue';
+    if (isToday(i.deadline)) return 'today';
+    if (new Date(i.deadline) <= weekEnd) return 'week';
+    return 'later';
+  };
+  const SECTIONS = [
+    { key: 'overdue', label: 'Overdue',   color: '#ef4444' },
+    { key: 'today',   label: 'Today',     color: '#a78bfa' },
+    { key: 'week',    label: 'This week', color: '#555' },
+    { key: 'later',   label: 'Later',     color: '#555' },
+    { key: 'nodate',  label: 'No deadline', color: '#555' },
+  ];
+  const overdueCount = active.filter(i => i.priority !== 1 && isOverdue(i.deadline)).length;
+  const todayCount   = active.filter(i => isToday(i.deadline)).length;
+
+  const composer = (
+    <div className="work-composer">
+      <div style={{ background: '#161616', border: '1px solid #262626', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.35)' }}>
+        <div style={{ padding: '10px 12px 0' }}><PriorityPills value={addPrio} onChange={setAddPrio} /></div>
+        <div style={{ display: 'flex', alignItems: 'center', padding: '4px 6px 4px 14px', gap: 8 }}>
+          <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && addItem()}
+            placeholder="Add a priority…" style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: '#e8e8e8', fontSize: 15, padding: '12px 0' }} />
+          {input.trim() && <button onClick={addItem} style={{ padding: '9px 18px', background: '#7c3aed', border: 'none', borderRadius: 10, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>Add</button>}
+        </div>
+        <div style={{ display: 'flex', gap: 8, padding: '0 12px 10px' }}>
+          <button onClick={() => setExpand(e => e === 'date' ? null : 'date')} style={metaBtn(addDeadline || expand === 'date')}>
+            🗓 {addDeadline ? formatDeadline(addDeadline) : 'Deadline'}
+            {addDeadline && <span onClick={e => { e.stopPropagation(); setAddDeadline(null); }} style={{ opacity: 0.6 }}>×</span>}
+          </button>
+          <button onClick={() => setExpand(e => e === 'who' ? null : 'who')} style={metaBtn(addAssignee || expand === 'who')}>
+            👤 {addAssigneeName ?? 'Assignee'}
+            {addAssignee && <span onClick={e => { e.stopPropagation(); setAddAssignee(null); }} style={{ opacity: 0.6 }}>×</span>}
+          </button>
+        </div>
+        {expand === 'date' && (
+          <div style={{ display: 'flex', gap: 6, padding: '0 12px 12px', flexWrap: 'wrap' }}>
+            {[['Today', 'today'], ['Tomorrow', 'tomorrow'], ['Weekend', 'weekend'], ['Next wk', 'nextweek']].map(([label, kind]) => (
+              <button key={kind} onClick={() => { setAddDeadline(quickDate(kind)); setExpand(null); }} style={pchip(false, '#0ea5e9')}>{label}</button>
+            ))}
+            <button onClick={() => { setPickCal(true); }} style={pchip(false, '#7c3aed')}>📅 Pick…</button>
+          </div>
+        )}
+        {expand === 'who' && (
+          <div style={{ padding: '0 12px 12px' }}>
+            <AssigneeChips value={addAssignee} people={roster} onAddPerson={addPerson} onSelect={id => { setAddAssignee(id); setExpand(null); }} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <>
       {/* Toolbar */}
@@ -304,76 +359,63 @@ export default function Work() {
         )}
       </div>
 
-      {/* Composer — priority, title, and inline deadline + assignee (no second edit needed) */}
-      <div className="todo-input-bar">
-        <div style={{ background: '#161616', border: '1px solid #262626', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.35)' }}>
-          <div style={{ padding: '10px 12px 0' }}><PriorityPills value={addPrio} onChange={setAddPrio} /></div>
-
-          <div style={{ display: 'flex', alignItems: 'center', padding: '4px 6px 4px 14px', gap: 8 }}>
-            <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && addItem()}
-              placeholder="Add a priority…" style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: '#e8e8e8', fontSize: 15, padding: '12px 0' }} />
-            {input.trim() && <button onClick={addItem} style={{ padding: '9px 18px', background: '#7c3aed', border: 'none', borderRadius: 10, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>Add</button>}
-          </div>
-
-          {/* Inline deadline + assignee toggles */}
-          <div style={{ display: 'flex', gap: 8, padding: '0 12px 10px' }}>
-            <button onClick={() => setExpand(e => e === 'date' ? null : 'date')} style={metaBtn(addDeadline || expand === 'date')}>
-              🗓 {addDeadline ? formatDeadline(addDeadline) : 'Deadline'}
-              {addDeadline && <span onClick={e => { e.stopPropagation(); setAddDeadline(null); }} style={{ opacity: 0.6 }}>×</span>}
-            </button>
-            <button onClick={() => setExpand(e => e === 'who' ? null : 'who')} style={metaBtn(addAssignee || expand === 'who')}>
-              👤 {addAssigneeName ?? 'Assignee'}
-              {addAssignee && <span onClick={e => { e.stopPropagation(); setAddAssignee(null); }} style={{ opacity: 0.6 }}>×</span>}
-            </button>
-          </div>
-
-          {expand === 'date' && (
-            <div style={{ display: 'flex', gap: 6, padding: '0 12px 12px', flexWrap: 'wrap' }}>
-              {[['Today', 'today'], ['Tomorrow', 'tomorrow'], ['Weekend', 'weekend'], ['Next wk', 'nextweek']].map(([label, kind]) => (
-                <button key={kind} onClick={() => { setAddDeadline(quickDate(kind)); setExpand(null); }} style={pchip(false, '#0ea5e9')}>{label}</button>
-              ))}
-              <button onClick={() => { setPickCal(true); }} style={pchip(false, '#7c3aed')}>📅 Pick…</button>
-            </div>
-          )}
-          {expand === 'who' && (
-            <div style={{ padding: '0 12px 12px' }}>
-              <AssigneeChips value={addAssignee} people={roster} onAddPerson={addPerson} onSelect={id => { setAddAssignee(id); setExpand(null); }} />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Precise date pick during compose */}
       <BottomSheet open={pickCal} onClose={() => setPickCal(false)} title="Deadline">
         <div style={{ padding: '4px 0 12px' }}>
           <DatePicker value={addDeadline} onChange={v => setAddDeadline(v)} fullWidth />
         </div>
       </BottomSheet>
 
-      {/* List */}
-      <div className="todo-scroll-pad work-scroll-pad" style={{ padding: '12px 14px 0' }}>
-        {!rawItems && <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>{[0.4, 0.6, 0.5].map((o, i) => <div key={i} style={{ height: 58, background: '#161616', borderRadius: 12, opacity: o }} />)}</div>}
+      {/* Agenda + rail (2-col on desktop, single column + fixed composer on mobile) */}
+      <div className="work-agenda">
+        <div className="work-main work-scroll-pad">
+          {!rawItems && <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>{[0.4, 0.6, 0.5].map((o, i) => <div key={i} style={{ height: 54, background: '#161616', borderRadius: 11, opacity: o }} />)}</div>}
 
-        {rawItems && active.length === 0 && doneList.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-            <div style={{ fontSize: 44, marginBottom: 12 }}>🎯</div>
-            <div style={{ fontSize: 16, color: '#444', fontWeight: 600 }}>{view === 'mine' ? 'No priorities yet' : 'Nothing assigned'}</div>
-            <div style={{ fontSize: 13, color: '#2e2e2e', marginTop: 6 }}>Add a line above to get started</div>
+          {rawItems && active.length === 0 && doneList.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+              <div style={{ fontSize: 44, marginBottom: 12 }}>🎯</div>
+              <div style={{ fontSize: 16, color: '#444', fontWeight: 600 }}>{view === 'mine' ? 'No priorities yet' : 'Nothing assigned'}</div>
+              <div style={{ fontSize: 13, color: '#2e2e2e', marginTop: 6 }}>Add a priority to get started</div>
+            </div>
+          )}
+
+          {/* P1 · Now strip */}
+          {p1s.length > 0 && <div style={{ fontSize: 11, fontWeight: 800, color: '#ef4444', letterSpacing: 1.2, textTransform: 'uppercase', padding: '2px 2px 8px' }}>🔴 Now</div>}
+          {p1s.map(i => <AgendaRow key={i.id} item={i} showAssignee={showAssignee} onToggle={toggle} onOpen={setEditItem} now hideDate />)}
+
+          {/* Time-bucketed sections */}
+          {SECTIONS.map(sec => {
+            const secItems = rest.filter(i => bucketOf(i) === sec.key);
+            if (secItems.length === 0) return null;
+            return (
+              <div key={sec.key}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 2px 8px' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase', color: sec.color }}>{sec.label}</span>
+                  <span style={{ flex: 1, height: 1, background: '#1b1b1b' }} />
+                </div>
+                {secItems.map(i => <AgendaRow key={i.id} item={i} showAssignee={showAssignee} onToggle={toggle} onOpen={setEditItem} hideDate={sec.key === 'today'} />)}
+              </div>
+            );
+          })}
+
+          {doneList.length > 0 && (
+            <button onClick={() => setShowDone(s => !s)} style={{ margin: '12px 0 4px', background: 'none', border: 'none', color: '#444', fontSize: 12, cursor: 'pointer' }}>
+              {showDone ? '▾' : '▸'} {doneList.length} done
+            </button>
+          )}
+          {showDone && doneList.map(i => <AgendaRow key={i.id} item={i} showAssignee={showAssignee} onToggle={toggle} onOpen={setEditItem} />)}
+        </div>
+
+        <div className="work-rail">
+          {composer}
+          <div className="work-summary">
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.6, textTransform: 'uppercase', color: '#4f4f4f', margin: '4px 4px 12px' }}>At a glance</div>
+            {[['Overdue', overdueCount, '#ef4444'], ['Due today', todayCount, '#e8e8e8'], ['P1 now', p1s.length, '#ef4444'], ['Total open', active.length, '#e8e8e8']].map(([label, n, c]) => (
+              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#777', padding: '8px 4px', borderBottom: '1px solid #181818' }}>
+                <span>{label}</span><b style={{ color: c, fontVariantNumeric: 'tabular-nums' }}>{n}</b>
+              </div>
+            ))}
           </div>
-        )}
-
-        {p1s.length > 0 && <div style={{ fontSize: 11, fontWeight: 800, color: '#ef4444', letterSpacing: 1.4, textTransform: 'uppercase', padding: '4px 2px 8px' }}>🔴 P1 · Now</div>}
-        {p1s.map(i => <WorkRow key={i.id} item={i} showAssignee={showAssignee} onToggle={toggle} onOpen={setEditItem} />)}
-
-        {p1s.length > 0 && rest.length > 0 && <div style={{ fontSize: 11, fontWeight: 700, color: '#555', letterSpacing: 1.2, textTransform: 'uppercase', padding: '12px 2px 8px' }}>By deadline</div>}
-        {rest.map(i => <WorkRow key={i.id} item={i} showAssignee={showAssignee} onToggle={toggle} onOpen={setEditItem} />)}
-
-        {doneList.length > 0 && (
-          <button onClick={() => setShowDone(s => !s)} style={{ margin: '10px 0', background: 'none', border: 'none', color: '#444', fontSize: 12, cursor: 'pointer' }}>
-            {showDone ? '▾' : '▸'} {doneList.length} done
-          </button>
-        )}
-        {showDone && doneList.map(i => <WorkRow key={i.id} item={i} showAssignee={showAssignee} onToggle={toggle} onOpen={setEditItem} />)}
+        </div>
       </div>
 
       <WorkEditSheet item={editData} people={roster} onClose={() => setEditItem(null)} onSave={saveEdit} onDelete={del} onAddPerson={addPerson} />
