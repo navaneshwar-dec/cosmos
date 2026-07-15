@@ -1,22 +1,83 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* ---------- design tokens (Glass) ---------- */
+:root {
+  --bg-base: #0a0a10;
+  --aura: radial-gradient(130% 90% at 22% -8%, #1a1330 0%, #0d0b17 46%, #08080c 100%);
+
+  /* glass surfaces — translucent white over the aura */
+  --glass-1: rgba(255,255,255,0.045);
+  --glass-2: rgba(255,255,255,0.065);
+  --glass-hi: rgba(255,255,255,0.09);
+  --border: rgba(255,255,255,0.08);
+  --border-hi: rgba(255,255,255,0.14);
+
+  --text: #ececf2;
+  --text-dim: #9490a8;
+  --text-faint: #6a6685;
+
+  --accent: #7c3aed;
+  --accent-soft: #a78bfa;
+  --accent-glow: rgba(167,139,250,0.55);
+
+  --radius-sm: 10px;
+  --radius: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 22px;
+  --blur: 14px;
+
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px;
+}
+
 html, body {
   height: 100%;
-  background: #0d0d0d;
-  color: #e8e8e8;
+  background: var(--bg-base);
+  color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', 'Segoe UI', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior: none;
 }
+body { background: var(--bg-base) var(--aura) fixed; }
 
 input, button, textarea, select { font-family: inherit; }
 a { text-decoration: none; }
-button { -webkit-appearance: none; }
+
+/* ---------- global interaction (press feedback, focus, no tap delay) ---------- */
+button {
+  -webkit-appearance: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: opacity 0.12s ease, transform 0.08s ease, background 0.15s ease, border-color 0.15s ease;
+}
+button:active:not(:disabled) { opacity: 0.55; }
+:focus-visible {
+  outline: 2px solid var(--accent-soft);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* glass utility for cards/surfaces that want real blur (use sparingly — fixed elements) */
+.glass {
+  background: var(--glass-1);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(var(--blur));
+  -webkit-backdrop-filter: blur(var(--blur));
+}
 
 ::-webkit-scrollbar { width: 3px; height: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.14); border-radius: 4px; }
+
+/* ---------- respect reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 
 /* ---------- animations ---------- */
 @keyframes sheetUp {
@@ -39,10 +100,10 @@ button { -webkit-appearance: none; }
   height: 52px;
   height: calc(52px + env(safe-area-inset-top, 0px));
   padding-top: env(safe-area-inset-top, 0px);
-  background: rgba(13, 13, 13, 0.92);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid #1a1a1a;
+  background: rgba(12, 11, 20, 0.62);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  border-bottom: 1px solid var(--border);
   z-index: 50;
   display: flex;
   align-items: center;
@@ -65,8 +126,10 @@ button { -webkit-appearance: none; }
 .app-bottom-nav {
   position: fixed;
   bottom: 0; left: 0; right: 0;
-  background: #0d0d0d;
-  border-top: 1px solid #1a1a1a;
+  background: rgba(12, 11, 20, 0.7);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  border-top: 1px solid var(--border);
   display: flex;
   height: calc(56px + env(safe-area-inset-bottom, 34px));
   padding-bottom: env(safe-area-inset-bottom, 34px);

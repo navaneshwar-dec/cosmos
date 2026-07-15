@@ -32,9 +32,9 @@ export default function BottomSheet({ open, onClose, title, children }) {
         onClick={onClose}
         style={{
           position: 'absolute', inset: 0,
-          background: 'rgba(0,0,0,0.65)',
-          backdropFilter: 'blur(6px)',
-          WebkitBackdropFilter: 'blur(6px)',
+          background: 'rgba(0,0,0,0.55)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
           animation: 'fadeIn 0.2s ease',
         }}
       />
@@ -47,9 +47,11 @@ export default function BottomSheet({ open, onClose, title, children }) {
         style={{
           position: 'absolute',
           bottom: 0, left: 0, right: 0,
-          background: '#161616',
-          borderTop: '1px solid #2a2a2a',
-          borderRadius: '20px 20px 0 0',
+          background: 'rgba(22, 20, 32, 0.82)',
+          backdropFilter: 'blur(24px) saturate(1.5)',
+          WebkitBackdropFilter: 'blur(24px) saturate(1.5)',
+          borderTop: '1px solid var(--border-hi)',
+          borderRadius: '22px 22px 0 0',
           maxHeight: '92dvh',
           overflowY: 'auto',
           WebkitOverflowScrolling: 'touch',
