@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import sql, { initDb } from '../../../lib/db';
 import { auth } from '../../../auth';
+import { istDateKey } from '../../../lib/dates';
 
 const WD = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 
@@ -11,7 +12,7 @@ export async function GET(req) {
   await initDb();
   const uid = session.user.id;
   const { searchParams } = new URL(req.url);
-  const date = searchParams.get('date') || new Date().toISOString().slice(0, 10);
+  const date = searchParams.get('date') || istDateKey();
   const weekday = WD[new Date(date + 'T00:00:00').getDay()];
 
   // Routines scheduled for this weekday (empty days = every day), with today's done state

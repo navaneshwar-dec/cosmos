@@ -7,6 +7,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Google({
       clientId:     process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      authorization: {
+        params: {
+          // drive.file = access only to files cosmos creates (never the rest of your Drive).
+          scope: 'openid email profile https://www.googleapis.com/auth/drive.file',
+          access_type: 'offline',      // ask Google for a refresh token
+          prompt: 'consent',           // force it to return the refresh token
+          include_granted_scopes: 'true',
+        },
+      },
     }),
   ],
   session: { strategy: 'jwt' },
@@ -57,6 +66,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               name    = EXCLUDED.name,
               picture = EXCLUDED.picture
           `;
+          // Persist Google Drive OAuth tokens (only overwrite refresh_token when Google sends one)
+          if (account.access_token) {
+            await sql`
+              UPDATE users SET
+                google_access_token = ${account.access_token},
+                google_token_expiry = ${account.expires_at ? new Date(account.expires_at * 1000) : null},
+                google_refresh_token = COALESCE(${account.refresh_token ?? null}, google_refresh_token)
+              WHERE google_id = ${account.providerAccountId}
+            `;
+          }
           const rows = await sql`
             SELECT id, prayer_enabled, is_admin
             FROM users

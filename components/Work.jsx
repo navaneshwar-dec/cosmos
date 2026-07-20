@@ -463,7 +463,7 @@ export default function Work() {
         <div style={{ padding: '10px 12px 0' }}><PriorityPills value={addPrio} onChange={setAddPrio} /></div>
         <div style={{ display: 'flex', alignItems: 'center', padding: '4px 6px 4px 14px', gap: 8 }}>
           <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && addItem()}
-            placeholder="Add a priority…" style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: '#e8e8e8', fontSize: 15, padding: '12px 0' }} />
+            placeholder="Add a priority…" style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: '#e8e8e8', fontSize: 18, fontWeight: 500, padding: '18px 0' }} />
           {input.trim() && <button onClick={addItem} style={{ padding: '9px 18px', background: '#7c3aed', border: 'none', borderRadius: 10, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>Add</button>}
         </div>
         <div style={{ display: 'flex', gap: 8, padding: '0 12px 10px' }}>

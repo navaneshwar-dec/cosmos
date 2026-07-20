@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import sql, { initDb } from '../../../../lib/db';
 import { auth } from '../../../../auth';
+import { istDateKey } from '../../../../lib/dates';
 
 export async function POST(req) {
   const session = await auth();
@@ -9,7 +10,7 @@ export async function POST(req) {
   await initDb();
   const uid = session.user.id;
   const { routineId, date, done } = await req.json();
-  const day = date || new Date().toISOString().slice(0, 10);
+  const day = date || istDateKey();
 
   const owns = (await sql`SELECT 1 FROM routines WHERE id = ${routineId} AND user_id = ${uid}`)[0];
   if (!owns) return NextResponse.json({ error: 'Not found' }, { status: 404 });

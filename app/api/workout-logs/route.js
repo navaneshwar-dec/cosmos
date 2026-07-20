@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import sql, { initDb } from '../../../lib/db';
 import { auth } from '../../../auth';
+import { istDateKey } from '../../../lib/dates';
 
 export async function GET(req) {
   const session = await auth();
@@ -26,7 +27,7 @@ export async function GET(req) {
   const rows = await sql`
     SELECT * FROM workout_logs
     WHERE user_id = ${uid}
-      AND log_date = ${date ?? new Date().toISOString().split('T')[0]}::date
+      AND log_date = ${date ?? istDateKey()}::date
     ORDER BY created_at ASC
   `;
   return NextResponse.json(rows);

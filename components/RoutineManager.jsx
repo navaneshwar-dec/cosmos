@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import Modal from './Modal';
+import { istDateKey } from '../lib/dates';
 
 const fetcher = url => fetch(url).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
 const TEAL = '#14b8a6';
@@ -48,7 +49,7 @@ function RoutineForm({ initial, onSave, onCancel }) {
 }
 
 export default function RoutineManager({ open, onClose }) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = istDateKey();
   const { data: routines, mutate } = useSWR(open ? '/api/routines' : null, fetcher);
   const { data: myday, mutate: mutateDay } = useSWR(open ? `/api/myday?date=${today}` : null, fetcher);
   const [adding, setAdding] = useState(false);

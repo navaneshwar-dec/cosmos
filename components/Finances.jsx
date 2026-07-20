@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import useSWR from 'swr';
 import BottomSheet from './BottomSheet';
+import { istMonthKey } from '../lib/dates';
 
 const fetcher = url => fetch(url).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
 
@@ -545,7 +546,7 @@ function shiftMonth(month, delta) {
 }
 
 function OverviewTab({ onGoToReview }) {
-  const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
+  const [month, setMonth] = useState(() => istMonthKey());
   const [accountId, setAccountId] = useState(null);
   const { data: accounts } = useSWR('/api/finance/accounts', fetcher);
   const { data: overview } = useSWR(

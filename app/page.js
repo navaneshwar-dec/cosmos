@@ -1,5 +1,5 @@
 'use client';
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import dynamic from 'next/dynamic';
 import BottomSheet from '../components/BottomSheet';
@@ -13,6 +13,12 @@ const GymPlan   = dynamic(() => import('../components/GymPlan'),   { ssr: false 
 const Prayers   = dynamic(() => import('../components/Prayers'),   { ssr: false });
 const Assistant = dynamic(() => import('../components/Assistant'), { ssr: false });
 const Vault     = dynamic(() => import('../components/Vault'),     { ssr: false });
+const Diary     = dynamic(() => import('../components/Diary'),     { ssr: false });
+const Files     = dynamic(() => import('../components/Files'),     { ssr: false });
+
+// Finance (local SQLite) and the AI Assistant (local Ollama/Open WebUI) only work on
+// the Mac. This flag is set in .env.local but NOT on Vercel, so those tabs vanish in prod.
+const LOCAL_ONLY = process.env.NEXT_PUBLIC_LOCAL_FEATURES === '1';
 
 // ─── Loading skeleton ──────────────────────────────────────────────────────────
 
@@ -122,7 +128,7 @@ function AdminPanel({ open, onClose }) {
 
 // ─── User menu ────────────────────────────────────────────────────────────────
 
-function UserMenu({ open, onClose, session, onAdmin }) {
+function UserMenu({ open, onClose, session, onAdmin, workMode, onToggleWorkMode }) {
   const [signingOut, setSigningOut] = useState(false);
 
   async function handleSignOut() {
@@ -150,6 +156,24 @@ function UserMenu({ open, onClose, session, onAdmin }) {
             )}
           </div>
         </div>
+
+        {/* Work mode toggle */}
+        <button onClick={onToggleWorkMode} style={{
+          display: 'flex', alignItems: 'center', gap: 14, padding: '15px 18px',
+          background: workMode ? '#7c3aed18' : '#141414',
+          border: `1px solid ${workMode ? '#7c3aed66' : '#2a2a2a'}`, borderRadius: 14,
+          cursor: 'pointer', textAlign: 'left', transition: 'background .15s, border-color .15s',
+        }}>
+          <span style={{ fontSize: 20 }}>💼</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ color: workMode ? '#a78bfa' : '#ccc', fontSize: 14, fontWeight: 600 }}>Work mode</div>
+            <div style={{ fontSize: 11, color: '#555', marginTop: 2 }}>Show only Work in the nav bar</div>
+          </div>
+          {/* switch */}
+          <span style={{ width: 42, height: 25, borderRadius: 13, flexShrink: 0, background: workMode ? '#7c3aed' : '#2e2e2e', position: 'relative', transition: 'background .18s' }}>
+            <span style={{ position: 'absolute', top: 3, left: workMode ? 20 : 3, width: 19, height: 19, borderRadius: '50%', background: '#fff', transition: 'left .18s cubic-bezier(0.32,0.72,0,1)' }} />
+          </span>
+        </button>
 
         {/* Admin panel button */}
         {session.user.isAdmin && (
@@ -224,6 +248,26 @@ export default function Home() {
   const [adminOpen, setAdmin]   = useState(false);
   const [linksOpen, setLinks]   = useState(false);
   const [vaultOpen, setVault]   = useState(false);
+  const [diaryOpen, setDiary]   = useState(false);
+  const [filesOpen, setFiles]   = useState(false);
+  const [assistantOpen, setAssistant] = useState(false);
+  const [workMode, setWorkMode] = useState(false);
+
+  // restore work mode (per-device) after mount to avoid SSR hydration mismatch
+  useEffect(() => {
+    try {
+      if (localStorage.getItem('cosmos_work_mode') === '1') { setWorkMode(true); setActive('work'); }
+    } catch {}
+  }, []);
+
+  function toggleWorkMode() {
+    setWorkMode(v => {
+      const next = !v;
+      try { localStorage.setItem('cosmos_work_mode', next ? '1' : '0'); } catch {}
+      if (next) setActive('work');
+      return next;
+    });
+  }
 
   if (status === 'loading') return <LoadingScreen />;
   if (!session) return <Suspense fallback={<LoadingScreen />}><Login /></Suspense>;
@@ -253,15 +297,16 @@ export default function Home() {
 
   const { prayerEnabled, isAdmin } = session.user;
 
-  const tabs = [
-    { id: 'myday',     label: 'My Day',    icon: TabMyDayIcon },
-    { id: 'todo',      label: 'Tasks',     icon: TabTaskIcon },
-    { id: 'work',      label: 'Work',      icon: TabWorkIcon },
-    { id: 'finances',  label: 'Finance',   icon: TabFinanceIcon },
-    { id: 'gym',       label: 'Gym',       icon: TabGymIcon },
-    ...(prayerEnabled ? [{ id: 'prayers', label: 'ప్రార్థన', icon: TabPrayerIcon }] : []),
-    { id: 'assistant', label: 'Assistant', icon: TabAssistantIcon },
-  ];
+  const tabs = workMode
+    ? [{ id: 'work', label: 'Work', icon: TabWorkIcon }]
+    : [
+        { id: 'myday',     label: 'My Day',    icon: TabMyDayIcon },
+        { id: 'todo',      label: 'Tasks',     icon: TabTaskIcon },
+        { id: 'work',      label: 'Work',      icon: TabWorkIcon },
+        ...(LOCAL_ONLY ? [{ id: 'finances', label: 'Finance', icon: TabFinanceIcon }] : []),
+        { id: 'gym',       label: 'Gym',       icon: TabGymIcon },
+        ...(prayerEnabled ? [{ id: 'prayers', label: 'ప్రార్థన', icon: TabPrayerIcon }] : []),
+      ];
 
   return (
     <>
@@ -270,6 +315,28 @@ export default function Home() {
           cosmos<span style={{ color: '#7c3aed' }}>.</span>
         </span>
         <div style={{ flex: 1 }} />
+        {/* Assistant */}
+        {LOCAL_ONLY && (
+          <button onClick={() => setAssistant(true)} title="Assistant" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, color: '#444', display: 'flex', alignItems: 'center', marginRight: 4 }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4z" />
+              <path d="M18.5 15.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z" />
+            </svg>
+          </button>
+        )}
+        {/* Files */}
+        <button onClick={() => setFiles(true)} title="Files" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, color: '#444', display: 'flex', alignItems: 'center', marginRight: 4 }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 6a2 2 0 012-2h3l2 2h7a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2z" />
+          </svg>
+        </button>
+        {/* Diary */}
+        <button onClick={() => setDiary(true)} title="Diary" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, color: '#444', display: 'flex', alignItems: 'center', marginRight: 4 }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 4.5A2.5 2.5 0 016.5 2H20v20H6.5A2.5 2.5 0 014 19.5z" />
+            <path d="M8 2v20" />
+          </svg>
+        </button>
         {/* Vault */}
         <button onClick={() => setVault(true)} title="Password vault" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, color: '#444', display: 'flex', alignItems: 'center', marginRight: 4 }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -305,10 +372,9 @@ export default function Home() {
         {active === 'myday'    && <MyDay />}
         {active === 'todo'     && <Todo />}
         {active === 'work'     && <Work />}
-        {active === 'finances' && <Finances />}
+        {active === 'finances' && LOCAL_ONLY && <Finances />}
         {active === 'gym'      && <GymPlan />}
         {active === 'prayers'  && prayerEnabled && <Prayers />}
-        {active === 'assistant' && <Assistant />}
       </main>
 
       <nav className="app-bottom-nav">
@@ -348,9 +414,14 @@ export default function Home() {
         onClose={() => setUserMenu(false)}
         session={session}
         onAdmin={() => setAdmin(true)}
+        workMode={workMode}
+        onToggleWorkMode={toggleWorkMode}
       />
       <LinksSheet open={linksOpen} onClose={() => setLinks(false)} />
       <Vault open={vaultOpen} onClose={() => setVault(false)} />
+      <Diary open={diaryOpen} onClose={() => setDiary(false)} />
+      <Files open={filesOpen} onClose={() => setFiles(false)} />
+      {LOCAL_ONLY && <Assistant open={assistantOpen} onClose={() => setAssistant(false)} />}
       {isAdmin && <AdminPanel open={adminOpen} onClose={() => setAdmin(false)} />}
     </>
   );

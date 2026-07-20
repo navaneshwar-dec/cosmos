@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import useSWR from 'swr';
 import { useSession } from 'next-auth/react';
 import RoutineManager from './RoutineManager';
+import { istDateKey } from '../lib/dates';
 
 const fetcher = url => fetch(url).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
 
@@ -41,12 +42,32 @@ const SECTIONS = [
   { key: 'anytime',   label: 'Anytime',   test: m => m == null },
 ];
 
+const DISCIPLINE_QUOTES = [
+  { q: 'Discipline is the bridge between goals and accomplishment.', a: 'Jim Rohn' },
+  { q: 'We must all suffer one of two things: the pain of discipline or the pain of regret.', a: 'Jim Rohn' },
+  { q: 'Discipline equals freedom.', a: 'Jocko Willink' },
+  { q: 'The first and greatest victory is to conquer yourself.', a: 'Plato' },
+  { q: 'No man is free who is not master of himself.', a: 'Epictetus' },
+  { q: 'Rule your mind or it will rule you.', a: 'Horace' },
+  { q: 'Mastering others is strength. Mastering yourself is true power.', a: 'Lao Tzu' },
+  { q: 'He who conquers himself is the mightiest warrior.', a: 'Confucius' },
+  { q: 'Success is nothing more than a few simple disciplines, practiced every day.', a: 'Jim Rohn' },
+  { q: 'The successful warrior is the average man, with laser-like focus.', a: 'Bruce Lee' },
+  { q: 'Knowing yourself is the beginning of all wisdom.', a: 'Aristotle' },
+  { q: 'The price of discipline is always less than the pain of regret.', a: 'Nido Qubein' },
+  { q: 'It always seems impossible until it is done.', a: 'Nelson Mandela' },
+  { q: 'Self-discipline is the magic power that makes you virtually unstoppable.', a: 'Dan Kennedy' },
+  { q: 'Discipline is the soul of an army.', a: 'George Washington' },
+  { q: 'What lies in our power to do, lies in our power not to do.', a: 'Aristotle' },
+];
+
 export default function MyDay() {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = istDateKey();
   const { data, mutate } = useSWR(`/api/myday?date=${today}`, fetcher, { revalidateOnFocus: true });
   const { data: session } = useSession();
   const [items, setItems] = useState([]);
   const [routineOpen, setRoutineOpen] = useState(false);
+  const [quote] = useState(() => DISCIPLINE_QUOTES[Math.floor(Math.random() * DISCIPLINE_QUOTES.length)]);
 
   useEffect(() => {
     if (!data?.items) return;
@@ -95,6 +116,12 @@ export default function MyDay() {
             <div style={{ fontSize: 11, color: 'var(--text-faint)', marginTop: 6 }}>{doneCount} of {total} done</div>
           </div>
         )}
+      </div>
+
+      {/* Discipline quote of the moment */}
+      <div style={{ margin: '0 16px 10px', padding: '13px 15px', background: 'var(--glass-1)', border: '1px solid var(--border)', borderLeft: '3px solid var(--accent-soft)', borderRadius: 12 }}>
+        <div style={{ fontSize: 13.5, color: 'var(--text-dim)', fontStyle: 'italic', lineHeight: 1.5 }}>“{quote.q}”</div>
+        <div style={{ fontSize: 12, color: 'var(--accent-soft)', fontWeight: 700, marginTop: 6 }}>— {quote.a}</div>
       </div>
 
       {/* Timeline */}

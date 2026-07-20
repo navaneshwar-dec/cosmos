@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import BottomSheet from './BottomSheet';
+import { istDateKey } from '../lib/dates';
 
 // ─── exercise data ────────────────────────────────────────────────────────────
 
@@ -136,7 +137,7 @@ function LogSheet({ open, onClose, ex, day, existingLog, t, onSaved }) {
     const topWeight = sets.filter(s => s.weight).sort((a, b) => parseFloat(b.weight) - parseFloat(a.weight))[0]?.weight;
 
     const payload = {
-      log_date:    new Date().toISOString().split('T')[0],
+      log_date:    istDateKey(),
       day,
       exercise:    ex.name,
       started_at:  startedAt.current || new Date().toISOString(),
@@ -558,7 +559,7 @@ export default function GymPlan() {
     if (saved) setDone(JSON.parse(saved));
 
     // Load today's workout logs
-    const today = new Date().toISOString().split('T')[0];
+    const today = istDateKey();
     fetch(`/api/workout-logs?date=${today}`).then(r => r.json()).then(rows => {
       const map = {};
       rows.forEach(r => { map[r.exercise] = r; });

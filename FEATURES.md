@@ -13,6 +13,8 @@ Keep entries short — a line or two. Details get fleshed out at build time.
 - **AI Assistant tab** — Open WebUI embedded in-app, voice mode (Kitten TTS + local Whisper), answers questions over live task/finance/gym data. Mac-local only.
 - **Push notifications** — real Web Push for task reminders that fire when the app is closed (needs Vercel env vars + GitHub Actions secret set to go fully live).
 - **Password manager** — zero-knowledge vault (🔒 header icon). Master password → client-side PBKDF2 + AES-GCM; server (Neon) only stores ciphertext, never the key or plaintext. Reveal/copy, strong-password generator. Works on phone.
+- **Personal diary** — private journal (📖 header icon → full-screen glass overlay). One entry per calendar day, auto-saving as you write, optional mood emoji, ‹ › day navigation, searchable browse panel of past days. Neon-backed (works on phone). Future option: encrypt bodies with the vault crypto if desired.
+- **File storage module** — Google-Drive-backed file manager (📁 header icon → full-screen glass overlay). Real `cosmos` folder in your own Drive via `drive.file` scope (cosmos only sees files it creates). Upload / download / create folders / rename / delete (→ Drive trash) / breadcrumb navigation / name search. Works on phone. Note: uses ~4.5MB Vercel request-body limit for uploads on the deployed side (no limit locally); large-file resumable upload is a future upgrade.
 
 ## In progress
 
@@ -20,8 +22,7 @@ _(nothing right now)_
 
 ## Ideas
 
-- **Important file storage module** — store & retrieve important documents.
-  - Note: explore connecting to Google Drive via a Google Drive MCP (store/retrieve docs through Drive rather than hosting files ourselves).
+_(nothing right now — drop new ideas here)_
 
 ---
 

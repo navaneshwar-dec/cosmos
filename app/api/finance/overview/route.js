@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import db from '../../../../lib/financeDb';
 import { auth } from '../../../../auth';
+import { istMonthKey } from '../../../../lib/dates';
 
 function monthRange(month) {
   const [y, m] = month.split('-').map(Number);
@@ -16,7 +17,7 @@ export async function GET(req) {
 
   const userId = session.user.id;
   const { searchParams } = new URL(req.url);
-  const month = searchParams.get('month') || new Date().toISOString().slice(0, 7);
+  const month = searchParams.get('month') || istMonthKey();
   const accountId = searchParams.get('accountId');
   const { from, to } = monthRange(month);
 

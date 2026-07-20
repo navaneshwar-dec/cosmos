@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import financeDb from '../../../../lib/financeDb';
 import { requireAssistantKey } from '../../../../lib/assistantAuth';
+import { istMonthKey } from '../../../../lib/dates';
 
 function monthRange(month) {
   const [y, m] = month.split('-').map(Number);
@@ -15,7 +16,7 @@ export async function GET(req) {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
-  const month = searchParams.get('month') || new Date().toISOString().slice(0, 7);
+  const month = searchParams.get('month') || istMonthKey();
   const { from, to } = monthRange(month);
 
   const totalSpend = financeDb.prepare(

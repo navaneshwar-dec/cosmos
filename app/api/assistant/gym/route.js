@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import sql, { initDb } from '../../../../lib/db';
 import { requireAssistantKey } from '../../../../lib/assistantAuth';
+import { istDateKey } from '../../../../lib/dates';
 
 export async function GET(req) {
   const userId = await requireAssistantKey(req);
@@ -15,7 +16,7 @@ export async function GET(req) {
   const rows = await sql`
     SELECT log_date, day, exercise, sets, skipped, skip_reason, notes
     FROM workout_logs
-    WHERE user_id = ${userId} AND log_date >= ${from.toISOString().split('T')[0]}::date
+    WHERE user_id = ${userId} AND log_date >= ${istDateKey(from)}::date
     ORDER BY log_date DESC, created_at ASC
   `;
   return NextResponse.json(rows);

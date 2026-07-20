@@ -26,15 +26,22 @@ export default function Login() {
         pointerEvents: 'none',
       }} />
 
-      {/* Logo */}
-      <div style={{ marginBottom: 12 }}>
-        <div style={{ fontSize: 52, fontWeight: 900, color: '#fff', letterSpacing: -2, lineHeight: 1 }}>
-          cosmos<span style={{ color: '#7c3aed' }}>.</span>
-        </div>
-      </div>
+      {/* Logo mark */}
+      <CosmosMark />
 
-      <div style={{ fontSize: 15, color: '#444', marginBottom: error ? 24 : 56, letterSpacing: 0.3 }}>
-        your personal universe
+      {/* Wordmark — Snell Roundhand on Apple devices matches the script logo */}
+      <div style={{
+        fontSize: 52, lineHeight: 1, color: '#fff', marginTop: 4,
+        fontFamily: "'Snell Roundhand', 'Apple Chancery', 'Brush Script MT', cursive",
+        fontWeight: 500, letterSpacing: 0.5,
+        textShadow: '0 2px 24px rgba(124,58,237,0.35)',
+      }}>Cosmos</div>
+
+      <div style={{
+        fontSize: 11, color: '#6a6685', letterSpacing: 3, textTransform: 'uppercase',
+        marginTop: 10, marginBottom: error ? 24 : 52,
+      }}>
+        Precision in every decision
       </div>
 
       {error && (
@@ -82,6 +89,52 @@ export default function Login() {
 
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
+  );
+}
+
+function CosmosMark() {
+  const orbit  = 'rgba(206,201,228,0.42)';
+  const bright = 'rgba(233,229,247,0.92)';
+  const accent = '#a78bfa';
+  const spark = (x, y, s, c = bright) =>
+    `M${x},${y - s} L${x + s * 0.26},${y - s * 0.26} L${x + s},${y} L${x + s * 0.26},${y + s * 0.26} L${x},${y + s} L${x - s * 0.26},${y + s * 0.26} L${x - s},${y} L${x - s * 0.26},${y - s * 0.26} Z`;
+
+  return (
+    <svg width="160" height="134" viewBox="0 0 240 200" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style={{ display: 'block' }}>
+      {/* orbital rings */}
+      <g stroke={orbit} strokeWidth="1">
+        <circle cx="112" cy="98" r="60" />
+        <circle cx="150" cy="112" r="46" />
+        <circle cx="122" cy="128" r="35" />
+      </g>
+
+      {/* tiny orbit markers */}
+      <g fill={orbit}>
+        <circle cx="60" cy="86" r="1.4" />
+        <circle cx="172" cy="96" r="1.4" />
+        <circle cx="104" cy="160" r="1.4" />
+        <circle cx="166" cy="150" r="1.4" />
+      </g>
+
+      {/* crescent moon */}
+      <path d="M98,22 A13,13 0 1,0 98,48 A10,10 0 1,1 98,22 Z" fill={bright} />
+
+      {/* planets */}
+      <circle cx="74" cy="118" r="5.5" fill={accent} />
+      <circle cx="132" cy="152" r="4" fill={bright} />
+      <circle cx="158" cy="94" r="3" fill={orbit} />
+
+      {/* sparkles */}
+      <path d={spark(58, 70, 6, bright)} fill={bright} />
+      <path d={spark(178, 64, 5, bright)} fill={bright} />
+      <path d={spark(196, 122, 4, accent)} fill={accent} />
+      <path d={spark(150, 40, 4, bright)} fill={bright} />
+      <path d={spark(90, 150, 5, accent)} fill={accent} />
+      <path d={spark(48, 112, 3, bright)} fill={bright} />
+      <path d={spark(120, 78, 3.5, bright)} fill={bright} />
+      <path d={spark(138, 112, 3, bright)} fill={bright} />
+      <path d={spark(176, 158, 3.5, bright)} fill={bright} />
+    </svg>
   );
 }
 
