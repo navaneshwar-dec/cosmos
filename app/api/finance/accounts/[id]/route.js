@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import db from '../../../../../lib/financeDb';
 import { auth } from '../../../../../auth';
+import { encryptSecret } from '../../../../../lib/financeCrypto';
+import { publicAccount } from '../route';
 
 export async function PATCH(req, { params }) {
   const session = await auth();
@@ -10,17 +12,20 @@ export async function PATCH(req, { params }) {
   const current = db.prepare('SELECT * FROM accounts WHERE id = ? AND user_id = ?').get(id, session.user.id);
   if (!current) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  const { name, issuer, last4, color } = await req.json();
-  db.prepare('UPDATE accounts SET name = ?, issuer = ?, last4 = ?, color = ? WHERE id = ? AND user_id = ?').run(
+  const { name, type, issuer, last4, color, password } = await req.json();
+  db.prepare('UPDATE accounts SET name = ?, type = ?, issuer = ?, last4 = ?, color = ?, password_enc = ? WHERE id = ? AND user_id = ?').run(
     name?.trim() ?? current.name,
+    ['credit_card', 'bank_account'].includes(type) ? type : current.type,
     issuer !== undefined ? issuer?.trim() ?? null : current.issuer,
     last4 !== undefined ? last4?.trim() ?? null : current.last4,
     color !== undefined ? color : current.color,
+    // only replace the password when a new one is provided; blank string clears it
+    password === undefined ? current.password_enc : (password ? encryptSecret(password) : null),
     id, session.user.id
   );
 
   const account = db.prepare('SELECT * FROM accounts WHERE id = ?').get(id);
-  return NextResponse.json(account);
+  return NextResponse.json(publicAccount(account));
 }
 
 export async function DELETE(_, { params }) {

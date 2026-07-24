@@ -26,7 +26,7 @@ export async function POST(req) {
   if (!title?.trim()) return NextResponse.json({ error: 'Title required' }, { status: 400 });
 
   const [item] = await sql`
-    INSERT INTO work_items (user_id, title, priority, deadline, assignee_id, notes, labels)
+    INSERT INTO work_items (user_id, title, priority, deadline, assignee_id, notes, labels, sort_order)
     VALUES (
       ${session.user.id},
       ${title.trim()},
@@ -34,7 +34,8 @@ export async function POST(req) {
       ${deadline ?? null},
       ${assignee_id ?? null},
       ${notes ?? null},
-      ${labels ?? []}
+      ${labels ?? []},
+      (SELECT COALESCE(MAX(sort_order), 0) + 1 FROM work_items WHERE user_id = ${session.user.id})
     )
     RETURNING *
   `;

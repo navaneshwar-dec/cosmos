@@ -7,7 +7,12 @@ export async function GET() {
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   ensureUserSeeded(session.user.id);
-  const categories = db.prepare('SELECT * FROM categories WHERE user_id = ? ORDER BY parent_id IS NOT NULL, name').all(session.user.id);
+  const categories = db.prepare(`
+    SELECT c.*, (SELECT COUNT(*) FROM transactions t WHERE t.category_id = c.id) AS tx_count
+    FROM categories c
+    WHERE c.user_id = ?
+    ORDER BY c.parent_id IS NOT NULL, c.name
+  `).all(session.user.id);
   return NextResponse.json(categories);
 }
 

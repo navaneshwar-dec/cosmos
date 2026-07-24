@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import useSWR from 'swr';
 import BottomSheet from './BottomSheet';
 import Modal from './Modal';
+import Pomodoro from './Pomodoro';
 
 const fetcher = url => fetch(url).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
 
@@ -130,7 +131,10 @@ function DeadlinePicker({ value, onChange }) {
 function sortWork(items) {
   return [...items].sort((a, b) => {
     const aP1 = a.priority === 1, bP1 = b.priority === 1;
-    if (aP1 && bP1) return new Date(a.created_at) - new Date(b.created_at);
+    if (aP1 && bP1) {
+      const s = (a.sort_order ?? 0) - (b.sort_order ?? 0);
+      return s !== 0 ? s : new Date(a.created_at) - new Date(b.created_at);
+    }
     if (aP1) return -1;
     if (bP1) return 1;
     if (!a.deadline && !b.deadline) return a.priority - b.priority;
@@ -327,15 +331,22 @@ function relDays(dl) {
 }
 
 // ─── Agenda row — flat, time-bucketed (the section supplies the "when") ─────────
-function AgendaRow({ item, showAssignee, onToggle, onOpen, hideDate, now }) {
+function AgendaRow({ item, showAssignee, onToggle, onOpen, hideDate, now, rowRef, dragging, handleProps, rowStyle }) {
   const p = prio(item.priority);
   const dl = item.deadline;
   const labels = item.labels || [];
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '11px 13px', marginBottom: 7,
-      background: now ? 'rgba(239,68,68,0.10)' : '#131313',
-      border: `1px solid ${now ? 'rgba(239,68,68,0.30)' : isOverdue(dl) ? '#ef444422' : '#1c1c1c'}`,
-      borderRadius: 11, opacity: item.completed ? 0.45 : 1 }}>
+    <div ref={rowRef} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '11px 13px', marginBottom: 7,
+      background: dragging ? '#1e1e1e' : now ? 'rgba(239,68,68,0.10)' : '#131313',
+      border: `1px solid ${dragging ? '#7c3aed88' : now ? 'rgba(239,68,68,0.30)' : isOverdue(dl) ? '#ef444422' : '#1c1c1c'}`,
+      borderRadius: 11, opacity: item.completed ? 0.45 : 1,
+      boxShadow: dragging ? '0 10px 28px rgba(0,0,0,0.55)' : 'none',
+      ...(rowStyle || {}) }}>
+      {handleProps && (
+        <span {...handleProps} aria-label="Drag to reorder" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, cursor: 'grab', touchAction: 'none', color: dragging ? '#a78bfa' : '#4a4a4a', marginLeft: -3 }}>
+          <svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"/><circle cx="9" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="9" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="9" cy="13" r="1.3"/></svg>
+        </span>
+      )}
       <button onClick={() => onToggle(item.id)} style={{ width: 21, height: 21, borderRadius: 6, border: `2px solid ${item.completed ? '#7c3aed' : '#333'}`, background: item.completed ? '#7c3aed' : 'transparent', cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 800 }}>{item.completed && '✓'}</button>
       <span style={{ fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 5, background: p.bg, color: p.color, flexShrink: 0 }}>{p.label}</span>
       <button onClick={() => onOpen(item)} style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 8,
@@ -350,11 +361,103 @@ function AgendaRow({ item, showAssignee, onToggle, onOpen, hideDate, now }) {
           <Avatar name={item.assignee_name} color={item.assignee_color} size={16} />{item.assignee_name}
         </span>
       )}
-      {dl && !hideDate && (
-        <span style={{ fontSize: 12, fontWeight: 600, color: isOverdue(dl) ? '#ef4444' : isToday(dl) ? '#a78bfa' : '#8a8a8a', flexShrink: 0 }}>
-          {isOverdue(dl) ? `⚠ ${relDays(dl)}` : formatDeadline(dl)}
-        </span>
-      )}
+      {dl && (() => {
+        const d = new Date(dl);
+        const hasTime = d.getHours() || d.getMinutes();
+        // When the section header already states the day (Today / Now strip), still show
+        // the time if one was set — just drop the redundant date.
+        if (hideDate) {
+          return hasTime
+            ? <span style={{ fontSize: 12, fontWeight: 600, color: isOverdue(dl) ? '#ef4444' : '#a78bfa', flexShrink: 0 }}>{d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+            : null;
+        }
+        return (
+          <span style={{ fontSize: 12, fontWeight: 600, color: isOverdue(dl) ? '#ef4444' : isToday(dl) ? '#a78bfa' : '#8a8a8a', flexShrink: 0 }}>
+            {isOverdue(dl) ? `⚠ ${relDays(dl)}` : formatDeadline(dl)}
+          </span>
+        );
+      })()}
+    </div>
+  );
+}
+
+// ─── P1 "Now" strip — pointer-based drag reorder (touch + mouse) ────────────────
+// The dragged card follows the finger via a live transform; the rest glide to open a
+// gap. The DOM order is NOT touched mid-drag (so measurements stay stable) — the array
+// only commits on drop.
+function P1List({ items, showAssignee, onToggle, onOpen, onReorder }) {
+  const [order, setOrder] = useState(() => items.map(i => i.id));
+  const [drag, setDrag] = useState(null); // { id, startIndex, dy, overIndex, height }
+  const refs = useRef({});
+  const slots = useRef([]);   // captured row geometry at drag start
+  const startY = useRef(0);
+  const key = items.map(i => i.id).join(',');
+  useEffect(() => { setOrder(items.map(i => i.id)); }, [key]);
+
+  const map = {};
+  items.forEach(i => { map[i.id] = i; });
+
+  function start(id, e) {
+    if (String(id).startsWith('tmp')) return;   // not saved yet — no server id
+    slots.current = order.map(iid => {
+      const r = refs.current[iid].getBoundingClientRect();
+      return { id: iid, top: r.top, height: r.height, center: r.top + r.height / 2 };
+    });
+    const startIndex = order.indexOf(id);
+    startY.current = e.clientY;
+    setDrag({ id, startIndex, dy: 0, overIndex: startIndex, height: slots.current[startIndex].height });
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch {}
+  }
+  function move(e) {
+    if (!drag) return;
+    e.preventDefault();
+    const dy = e.clientY - startY.current;
+    const draggedCenter = slots.current[drag.startIndex].center + dy;
+    let overIndex = 0;
+    for (let i = 0; i < slots.current.length; i++) {
+      if (i === drag.startIndex) continue;
+      if (draggedCenter > slots.current[i].center) overIndex++;
+    }
+    setDrag(d => ({ ...d, dy, overIndex }));
+  }
+  function end() {
+    if (!drag) return;
+    const { startIndex, overIndex } = drag;
+    setDrag(null);
+    if (overIndex !== startIndex) {
+      const n = [...order]; const [m] = n.splice(startIndex, 1); n.splice(overIndex, 0, m);
+      setOrder(n);
+      onReorder(n);
+    }
+  }
+
+  const gap = 7; // AgendaRow marginBottom
+  function styleFor(id, index) {
+    if (!drag) return {};
+    if (id === drag.id) {
+      return { transform: `translateY(${drag.dy}px) scale(1.02)`, zIndex: 6, position: 'relative', transition: 'none' };
+    }
+    let shift = 0;
+    const h = drag.height + gap;
+    if (drag.startIndex < drag.overIndex && index > drag.startIndex && index <= drag.overIndex) shift = -h;
+    else if (drag.startIndex > drag.overIndex && index >= drag.overIndex && index < drag.startIndex) shift = h;
+    return { transform: `translateY(${shift}px)`, transition: 'transform 0.16s ease' };
+  }
+
+  return (
+    <div style={{ touchAction: drag ? 'none' : 'auto' }}>
+      {order.map((id, index) => {
+        const it = map[id];
+        if (!it) return null;
+        return (
+          <AgendaRow key={id} item={it} showAssignee={showAssignee} onToggle={onToggle} onOpen={onOpen} now hideDate
+            rowRef={el => { if (el) refs.current[id] = el; }}
+            dragging={drag?.id === id}
+            rowStyle={styleFor(id, index)}
+            handleProps={{ onPointerDown: e => start(id, e), onPointerMove: move, onPointerUp: end, onPointerCancel: end }}
+          />
+        );
+      })}
     </div>
   );
 }
@@ -411,6 +514,12 @@ export default function Work() {
   function del(id) {
     setItems(prev => prev.filter(i => i.id !== id));
     fetch(`/api/work/${id}`, { method: 'DELETE' });
+  }
+  function reorderP1(orderedIds) {
+    const pos = new Map(orderedIds.map((id, i) => [id, i + 1]));
+    setItems(prev => sortWork(prev.map(i => pos.has(i.id) ? { ...i, sort_order: pos.get(i.id) } : i)));
+    const ids = orderedIds.filter(id => typeof id === 'number');
+    if (ids.length) fetch('/api/work/reorder', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids }) });
   }
   async function addPerson(name) {
     const res = await fetch('/api/people', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) });
@@ -539,6 +648,8 @@ export default function Work() {
       {/* Agenda + rail (2-col on desktop, single column + fixed composer on mobile) */}
       <div className="work-agenda">
         <div className="work-main work-scroll-pad">
+          <Pomodoro items={active} />
+
           {!rawItems && <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>{[0.4, 0.6, 0.5].map((o, i) => <div key={i} style={{ height: 54, background: '#161616', borderRadius: 11, opacity: o }} />)}</div>}
 
           {rawItems && active.length === 0 && doneList.length === 0 && (
@@ -549,9 +660,9 @@ export default function Work() {
             </div>
           )}
 
-          {/* P1 · Now strip */}
-          {p1s.length > 0 && <div style={{ fontSize: 11, fontWeight: 800, color: '#ef4444', letterSpacing: 1.2, textTransform: 'uppercase', padding: '2px 2px 8px' }}>🔴 Now</div>}
-          {p1s.map(i => <AgendaRow key={i.id} item={i} showAssignee={showAssignee} onToggle={toggle} onOpen={setEditItem} now hideDate />)}
+          {/* P1 · Now strip — drag to reorder */}
+          {p1s.length > 0 && <div style={{ fontSize: 11, fontWeight: 800, color: '#ef4444', letterSpacing: 1.2, textTransform: 'uppercase', padding: '2px 2px 8px' }}>🔴 Now{p1s.length > 1 && <span style={{ color: '#3a3a3a', fontWeight: 600, letterSpacing: 0, textTransform: 'none', marginLeft: 8 }}>drag ⠿ to reorder</span>}</div>}
+          {p1s.length > 0 && <P1List items={p1s} showAssignee={showAssignee} onToggle={toggle} onOpen={setEditItem} onReorder={reorderP1} />}
 
           {/* Time-bucketed sections */}
           {SECTIONS.map(sec => {

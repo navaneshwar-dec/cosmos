@@ -10,10 +10,10 @@ export async function POST(req) {
   if (!session?.user?.id) return new Response('Unauthorized', { status: 401 });
   await initDb();
 
-  const { messages = [], model = 'gemini' } = await req.json();
+  const { messages = [], model = 'gemini', finance = false } = await req.json();
   const name = session.user.name?.split(' ')[0];
 
-  const result = await streamCosmosAgent({ model, messages, userId: session.user.id, name });
+  const result = await streamCosmosAgent({ model, messages, userId: session.user.id, name, finance });
 
   return result.toUIMessageStreamResponse({
     onError: (err) => {

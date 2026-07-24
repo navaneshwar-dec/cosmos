@@ -20,11 +20,13 @@ export async function POST(req) {
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   await initDb();
-  const { text, date, recurrence, labels } = await req.json();
+  const { text, date, recurrence, labels, parentId } = await req.json();
   const [task] = await sql`
-    INSERT INTO tasks (user_id, text, date, recurrence, labels)
-    VALUES (${session.user.id}, ${text}, ${date ?? null}, ${recurrence ?? null}, ${labels ?? []})
+    INSERT INTO tasks (user_id, text, date, recurrence, labels, parent_id)
+    VALUES (${session.user.id}, ${text}, ${date ?? null}, ${recurrence ?? null}, ${labels ?? []}, ${parentId ?? null})
     RETURNING *
   `;
+  // adding an open sub-item re-opens its parent
+  if (parentId) await sql`UPDATE tasks SET completed = FALSE WHERE id = ${parentId} AND user_id = ${session.user.id}`;
   return NextResponse.json(task, { status: 201 });
 }

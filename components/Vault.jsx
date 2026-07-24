@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useOverlayDismiss, Grabber } from './OverlayDismiss';
 import { deriveKey, encryptJson, decryptJson, makeVerifier, checkVerifier, randomSaltB64, generatePassword } from '../lib/vaultCrypto';
 
 const inputStyle = { width: '100%', background: '#1a1a1a', border: '1px solid #262626', borderRadius: 10, padding: '13px 14px', color: '#e8e8e8', fontSize: 15, outline: 'none' };
@@ -116,12 +117,15 @@ export default function Vault({ open, onClose }) {
     await fetch(`/api/vault/entries/${id}`, { method: 'DELETE' });
   }
 
+  useOverlayDismiss(open, onClose);
+
   if (!open || typeof document === 'undefined') return null;
 
   return createPortal(
-    <div style={{ position: 'fixed', inset: 0, zIndex: 700, background: '#0d0d0d', display: 'flex', flexDirection: 'column', animation: 'fadeIn 0.15s ease' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 700, background: '#0d0d0d', display: 'flex', flexDirection: 'column', paddingTop: 'env(safe-area-inset-top, 0px)', animation: 'fadeIn 0.15s ease' }}>
+      <Grabber onClose={onClose} />
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 'calc(14px + env(safe-area-inset-top, 0px)) 16px 14px', borderBottom: '1px solid #1a1a1a', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', borderBottom: '1px solid #1a1a1a', flexShrink: 0 }}>
         {view !== 'list' && phase === 'ready' ? (
           <button onClick={() => { setView('list'); setSelected(null); setForm(null); }} style={{ background: 'none', border: 'none', color: '#888', fontSize: 22, cursor: 'pointer', padding: 0, lineHeight: 1 }}>‹</button>
         ) : null}

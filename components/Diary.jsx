@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { useOverlayDismiss, Grabber } from './OverlayDismiss';
 import useSWR from 'swr';
 
 const fetcher = url => fetch(url).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
@@ -112,6 +113,8 @@ export default function Diary({ open, onClose }) {
 
   function openEntry(dateStr) { setActiveDate(dateStr); setListOpen(false); setQuery(''); }
 
+  useOverlayDismiss(open, handleClose);
+
   if (!open || typeof document === 'undefined') return null;
 
   const words = wordCount(body);
@@ -129,6 +132,7 @@ export default function Diary({ open, onClose }) {
       paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       animation: 'fadeIn 0.2s ease',
     }}>
+      <Grabber onClose={handleClose} />
       {/* Top bar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 14px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
         <button onClick={handleClose} aria-label="Close diary" style={iconBtn}>

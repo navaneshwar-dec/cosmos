@@ -407,6 +407,40 @@ function NotificationBell({ permission, onRequest }) {
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
+function SubtaskSection({ parentId, subtasks, onToggle, onAdd, onDelete }) {
+  const [adding, setAdding] = useState(false);
+  const [draft, setDraft]   = useState('');
+  function commit(){ const v=draft.trim(); if(v){ onAdd(parentId, v); setDraft(''); } }
+  if (subtasks.length === 0 && !adding) {
+    return <div style={{ padding:'0 14px 10px 46px' }}>
+      <button onClick={()=>setAdding(true)} style={{ background:'none',border:'none',color:'#444',fontSize:12.5,fontWeight:600,cursor:'pointer',padding:'2px 0' }}>+ sub-item</button>
+    </div>;
+  }
+  return (
+    <div style={{ padding:'0 14px 10px 46px', display:'flex', flexDirection:'column', gap:6 }}>
+      {subtasks.map(s=>(
+        <div key={s.id} style={{ display:'flex', alignItems:'center', gap:10 }}>
+          <button onClick={()=>onToggle(s.id)} style={{ width:18,height:18,borderRadius:5,flexShrink:0,border:`2px solid ${s.completed?'#7c3aed':'#333'}`,background:s.completed?'#7c3aed':'transparent',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:10,fontWeight:800 }}>{s.completed&&'✓'}</button>
+          <span style={{ flex:1,minWidth:0,fontSize:13.5,color:s.completed?'#444':'#c8c8c8',textDecoration:s.completed?'line-through':'none',wordBreak:'break-word' }}>{s.text}</span>
+          <button onClick={()=>onDelete(s.id)} style={{ background:'none',border:'none',color:'#2e2e2e',cursor:'pointer',fontSize:16,lineHeight:1,padding:0,flexShrink:0 }}
+            onMouseEnter={e=>e.currentTarget.style.color='#ef4444'} onMouseLeave={e=>e.currentTarget.style.color='#2e2e2e'}>×</button>
+        </div>
+      ))}
+      {adding ? (
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          <span style={{ width:18,height:18,flexShrink:0 }} />
+          <input autoFocus value={draft} onChange={e=>setDraft(e.target.value)}
+            onKeyDown={e=>{ if(e.key==='Enter')commit(); if(e.key==='Escape'){setAdding(false);setDraft('');} }}
+            onBlur={()=>{ if(draft.trim())commit(); setAdding(false); }} placeholder="Add a sub-item…"
+            style={{ flex:1, background:'#161616', border:'1px solid #262626', borderRadius:8, padding:'6px 9px', color:'#e8e8e8', fontSize:13, outline:'none' }} />
+        </div>
+      ) : (
+        <button onClick={()=>setAdding(true)} style={{ alignSelf:'flex-start', background:'none', border:'none', color:'#555', fontSize:12.5, fontWeight:600, cursor:'pointer', padding:'2px 0' }}>+ sub-item</button>
+      )}
+    </div>
+  );
+}
+
 export default function Todo() {
   const { data: rawTasks } = useSWR('/api/tasks', fetcher, {
     revalidateOnFocus: false,
@@ -459,11 +493,30 @@ export default function Todo() {
   }
 
   async function toggleTask(id) {
-    const task=tasks.find(t=>t.id===id), nowDone=!task.completed;
-    setTasks(prev=>sortTasks(prev.map(t=>t.id===id?{...t,completed:nowDone}:t)));
+    const task=tasks.find(t=>t.id===id); if(!task) return; const nowDone=!task.completed;
+    setTasks(prev=>{
+      let arr=prev.map(t=>t.id===id?{...t,completed:nowDone}:t);
+      if(prev.some(t=>t.parent_id===id)) arr=arr.map(t=>t.parent_id===id?{...t,completed:nowDone}:t);            // parent → its sub-items
+      if(task.parent_id){ const sibs=arr.filter(t=>t.parent_id===task.parent_id); const all=sibs.length>0&&sibs.every(s=>s.completed); arr=arr.map(t=>t.id===task.parent_id?{...t,completed:all}:t); } // sub-item → parent
+      return sortTasks(arr);
+    });
     const res=await fetch(`/api/tasks/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({completed:nowDone})});
-    const {task:saved,next}=await res.json();
-    setTasks(prev=>sortTasks(next?[...prev.map(t=>t.id===id?saved:t),next]:prev.map(t=>t.id===id?saved:t)));
+    const {task:saved,next,affected}=await res.json();
+    setTasks(prev=>{
+      let arr=prev.map(t=>t.id===id?saved:t);
+      (affected||[]).forEach(a=>{ arr=arr.map(t=>t.id===a.id?a:t); });
+      if(next) arr=[...arr,next];
+      return sortTasks(arr);
+    });
+  }
+
+  async function addSubtask(parentId, text){
+    const v=(text||'').trim(); if(!v) return;
+    const tmp={id:`tmp-${Date.now()}`,text:v,parent_id:parentId,completed:false,labels:[],date:null,created_at:new Date().toISOString()};
+    setTasks(prev=>sortTasks(prev.map(t=>t.id===parentId?{...t,completed:false}:t).concat(tmp)));
+    const res=await fetch('/api/tasks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:v,parentId})});
+    const saved=await res.json();
+    setTasks(prev=>sortTasks(prev.map(t=>t.id===tmp.id?saved:t)));
   }
 
   function saveEdit(id,changes){
@@ -490,6 +543,7 @@ export default function Todo() {
 
   const searchActive = searchQuery.trim().length>0;
   const filtered = tasks.filter(t=>{
+    if(t.parent_id) return false;   // sub-items render nested under their parent
     if(recurringOnly&&!t.recurrence) return false;
     if(searchActive){
       const q=searchQuery.trim().toLowerCase();
@@ -613,17 +667,23 @@ export default function Todo() {
             const prevOverdue = idx>0&&isOverdue(filtered[idx-1].date);
             const thisToday   = isToday(task.date);
             const showTodayDivider = !searchActive&&filter==='Today'&&thisToday&&prevOverdue;
+            const kids = tasks.filter(t=>t.parent_id===task.id);
+            const kidsDone = kids.filter(k=>k.completed).length;
             return <>
               {showTodayDivider&&<div key={`div-${task.id}`} style={{ fontSize:11,fontWeight:700,color:'#a78bfa',letterSpacing:1.2,textTransform:'uppercase',padding:'12px 2px 8px',opacity:0.7 }}>Today</div>}
-              <div key={task.id} style={{ display:'flex',alignItems:'flex-start',gap:12,padding:'13px 14px',marginBottom:6,background:'#1a1a1a',border:`1px solid ${isOverdue(task.date)?'#ef444433':task.recurrence?'#7c3aed14':'#1e1e1e'}`,borderRadius:12,opacity:task.completed?0.45:1,transition:'opacity 0.2s' }}>
+              <div key={task.id} style={{ marginBottom:6,background:'#1a1a1a',border:`1px solid ${isOverdue(task.date)?'#ef444433':task.recurrence?'#7c3aed14':'#1e1e1e'}`,borderRadius:12,opacity:task.completed?0.45:1,transition:'opacity 0.2s' }}>
+              <div style={{ display:'flex',alignItems:'flex-start',gap:12,padding:'13px 14px' }}>
               {/* Checkbox */}
               <button onClick={()=>toggleTask(task.id)} style={{ width:24,height:24,borderRadius:7,border:`2px solid ${task.completed?'#7c3aed':'#2e2e2e'}`,background:task.completed?'#7c3aed':'transparent',cursor:'pointer',flexShrink:0,marginTop:0,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:12,fontWeight:800,transition:'all 0.15s' }}>
                 {task.completed&&'✓'}
               </button>
 
               {/* Content — tap opens edit */}
-              <button onClick={()=>setEditTask(task)} style={{ flex:1,background:'none',border:'none',cursor:'pointer',textAlign:'left',padding:0 }}>
-                <div style={{ fontSize:15,color:task.completed?'#444':'#e0e0e0',textDecoration:task.completed?'line-through':'none',lineHeight:1.45,wordBreak:'break-word' }}>{task.text}</div>
+              <button onClick={()=>setEditTask(task)} style={{ flex:1,minWidth:0,background:'none',border:'none',cursor:'pointer',textAlign:'left',padding:0 }}>
+                <div style={{ display:'flex',alignItems:'center',gap:8 }}>
+                  <span style={{ flex:1,minWidth:0,fontSize:15,color:task.completed?'#444':'#e0e0e0',textDecoration:task.completed?'line-through':'none',lineHeight:1.45,wordBreak:'break-word' }}>{task.text}</span>
+                  {kids.length>0&&<span style={{ flexShrink:0,fontSize:11,fontWeight:700,color:kidsDone===kids.length?'#4ade80':'#a78bfa',background:'#7c3aed14',padding:'1px 8px',borderRadius:8,fontVariantNumeric:'tabular-nums' }}>{kidsDone}/{kids.length}</span>}
+                </div>
                 <div style={{ display:'flex',alignItems:'center',gap:6,marginTop:5,flexWrap:'wrap' }}>
                   {task.date&&<span style={{ fontSize:12,color:isOverdue(task.date)?'#ef4444':isToday(task.date)?'#a78bfa':'#555' }}>{isOverdue(task.date)?'⚠ ':''}{formatDate(task.date)}</span>}
                   {task.recurrence&&<span style={{ fontSize:11,fontWeight:600,background:'#7c3aed14',color:'#6d4fc7',padding:'1px 7px',borderRadius:8 }}>↻ {formatRecurrence(task.recurrence)}</span>}
@@ -634,8 +694,11 @@ export default function Todo() {
               {/* Delete */}
               <button onClick={()=>deleteTask(task.id)} style={{ background:'none',border:'none',color:'#2e2e2e',cursor:'pointer',fontSize:22,lineHeight:1,padding:'0 0 0 4px',flexShrink:0,transition:'color 0.15s' }}
                 onMouseEnter={e=>e.currentTarget.style.color='#ef4444'} onMouseLeave={e=>e.currentTarget.style.color='#2e2e2e'}>×</button>
+              </div>
+              <SubtaskSection parentId={task.id} subtasks={kids} onToggle={toggleTask} onAdd={addSubtask} onDelete={deleteTask} />
             </div>
             </>;
+
           })}
 
           {rawTasks&&tasks.length>0&&(

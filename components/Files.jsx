@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useOverlayDismiss, Grabber } from './OverlayDismiss';
 import { signIn } from 'next-auth/react';
 import useSWR from 'swr';
 import Modal from './Modal';
@@ -61,6 +62,7 @@ export default function Files({ open, onClose }) {
     const prev = document.body.style.overflow; document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = prev; };
   }, [open]);
+  useOverlayDismiss(open, onClose);
 
   if (!open || typeof document === 'undefined') return null;
 
@@ -144,6 +146,7 @@ export default function Files({ open, onClose }) {
 
   return createPortal(
     <div style={overlay} onClick={() => setMenuFor(null)}>
+      <Grabber onClose={onClose} />
       {/* Top bar */}
       <div style={topbar}>
         <button onClick={onClose} aria-label="Close files" style={iconBtn}>

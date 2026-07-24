@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, Suspense } from 'react';
+import { createPortal } from 'react-dom';
 import { useSession, signOut } from 'next-auth/react';
 import dynamic from 'next/dynamic';
 import BottomSheet from '../components/BottomSheet';
@@ -15,6 +16,7 @@ const Assistant = dynamic(() => import('../components/Assistant'), { ssr: false 
 const Vault     = dynamic(() => import('../components/Vault'),     { ssr: false });
 const Diary     = dynamic(() => import('../components/Diary'),     { ssr: false });
 const Files     = dynamic(() => import('../components/Files'),     { ssr: false });
+const Medical   = dynamic(() => import('../components/Medical'),   { ssr: false });
 
 // Finance (local SQLite) and the AI Assistant (local Ollama/Open WebUI) only work on
 // the Mac. This flag is set in .env.local but NOT on Vercel, so those tabs vanish in prod.
@@ -128,82 +130,116 @@ function AdminPanel({ open, onClose }) {
 
 // ─── User menu ────────────────────────────────────────────────────────────────
 
+function useIsDesktop() {
+  const [d, setD] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const on = () => setD(mq.matches); on();
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
+  return d;
+}
+
 function UserMenu({ open, onClose, session, onAdmin, workMode, onToggleWorkMode }) {
   const [signingOut, setSigningOut] = useState(false);
+  const desktop = useIsDesktop();
 
   async function handleSignOut() {
     setSigningOut(true);
     await signOut({ callbackUrl: '/' });
   }
 
+  const body = (compact) => (
+    <div style={{ padding: compact ? 10 : '8px 20px 36px', display: 'flex', flexDirection: 'column', gap: compact ? 10 : 16 }}>
+      {/* Profile card */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: compact ? 12 : 16, padding: compact ? '12px 14px' : 16, background: '#141414', border: '1px solid #1e1e1e', borderRadius: compact ? 14 : 16 }}>
+        {session.user.image ? (
+          <img src={session.user.image} alt="" width={compact ? 40 : 52} height={compact ? 40 : 52} style={{ borderRadius: '50%', flexShrink: 0 }} />
+        ) : (
+          <div style={{ width: compact ? 40 : 52, height: compact ? 40 : 52, borderRadius: '50%', background: '#7c3aed22', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: compact ? 18 : 22 }}>
+            {session.user.name?.[0]?.toUpperCase()}
+          </div>
+        )}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: compact ? 14 : 16, fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{session.user.name}</div>
+          <div style={{ fontSize: compact ? 11 : 12, color: '#555', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{session.user.email}</div>
+          {session.user.isAdmin && (
+            <span style={{ display: 'inline-block', marginTop: 5, fontSize: 9, fontWeight: 800, padding: '2px 7px', borderRadius: 4, background: '#7c3aed22', color: '#a78bfa', letterSpacing: 1 }}>ADMIN</span>
+          )}
+        </div>
+      </div>
+
+      {/* Work mode toggle */}
+      <button onClick={onToggleWorkMode} style={{
+        display: 'flex', alignItems: 'center', gap: 14, padding: compact ? '12px 14px' : '15px 18px',
+        background: workMode ? '#7c3aed18' : '#141414',
+        border: `1px solid ${workMode ? '#7c3aed66' : '#2a2a2a'}`, borderRadius: 14,
+        cursor: 'pointer', textAlign: 'left', transition: 'background .15s, border-color .15s',
+      }}>
+        <span style={{ fontSize: 20 }}>💼</span>
+        <div style={{ flex: 1 }}>
+          <div style={{ color: workMode ? '#a78bfa' : '#ccc', fontSize: 14, fontWeight: 600 }}>Work mode</div>
+          <div style={{ fontSize: 11, color: '#555', marginTop: 2 }}>Show only Work in the nav bar</div>
+        </div>
+        <span style={{ width: 42, height: 25, borderRadius: 13, flexShrink: 0, background: workMode ? '#7c3aed' : '#2e2e2e', position: 'relative', transition: 'background .18s' }}>
+          <span style={{ position: 'absolute', top: 3, left: workMode ? 20 : 3, width: 19, height: 19, borderRadius: '50%', background: '#fff', transition: 'left .18s cubic-bezier(0.32,0.72,0,1)' }} />
+        </span>
+      </button>
+
+      {/* Admin panel button */}
+      {session.user.isAdmin && (
+        <button onClick={() => { onClose(); setTimeout(onAdmin, 200); }} style={{
+          display: 'flex', alignItems: 'center', gap: 14, padding: compact ? '12px 14px' : '15px 18px',
+          background: '#141414', border: '1px solid #2a2a2a', borderRadius: 14,
+          color: '#ccc', fontSize: 14, fontWeight: 600, cursor: 'pointer', textAlign: 'left',
+        }}>
+          <span style={{ fontSize: 20 }}>🛡️</span>
+          <div>
+            <div>Admin Panel</div>
+            <div style={{ fontSize: 11, color: '#444', marginTop: 2 }}>Manage users &amp; prayer access</div>
+          </div>
+        </button>
+      )}
+
+      {/* Sign out */}
+      <button onClick={handleSignOut} disabled={signingOut} style={{
+        padding: compact ? 12 : 15, background: '#1a0505', border: '1px solid #ef444433',
+        borderRadius: 14, color: '#ef4444', fontSize: 14, fontWeight: 700,
+        cursor: signingOut ? 'default' : 'pointer', opacity: signingOut ? 0.6 : 1,
+      }}>
+        {signingOut ? 'Signing out…' : 'Sign out'}
+      </button>
+    </div>
+  );
+
+  // Desktop: a small popover anchored to the top-right (no trip to the bottom sheet).
+  if (desktop) {
+    if (!open || typeof document === 'undefined') return null;
+    return createPortal(
+      <>
+        <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 600 }} />
+        <div style={{
+          position: 'fixed', top: 'calc(env(safe-area-inset-top, 0px) + 52px)', right: 12, zIndex: 601,
+          width: 'min(330px, calc(100vw - 24px))', background: 'rgba(22,20,30,0.98)',
+          backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+          border: '1px solid var(--border-hi)', borderRadius: 18, boxShadow: '0 18px 55px rgba(0,0,0,0.6)',
+          animation: 'fadeIn .14s ease', overflow: 'hidden',
+        }}>
+          {body(true)}
+        </div>
+      </>,
+      document.body,
+    );
+  }
+
+  // Mobile: keep the bottom sheet.
   return (
     <BottomSheet open={open} onClose={onClose} title="Account">
-      <div style={{ padding: '8px 20px 36px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {/* Profile card */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px', background: '#141414', border: '1px solid #1e1e1e', borderRadius: 16 }}>
-          {session.user.image ? (
-            <img src={session.user.image} alt="" width={52} height={52} style={{ borderRadius: '50%', flexShrink: 0 }} />
-          ) : (
-            <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#7c3aed22', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>
-              {session.user.name?.[0]?.toUpperCase()}
-            </div>
-          )}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{session.user.name}</div>
-            <div style={{ fontSize: 12, color: '#555', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{session.user.email}</div>
-            {session.user.isAdmin && (
-              <span style={{ display: 'inline-block', marginTop: 5, fontSize: 9, fontWeight: 800, padding: '2px 7px', borderRadius: 4, background: '#7c3aed22', color: '#a78bfa', letterSpacing: 1 }}>ADMIN</span>
-            )}
-          </div>
-        </div>
-
-        {/* Work mode toggle */}
-        <button onClick={onToggleWorkMode} style={{
-          display: 'flex', alignItems: 'center', gap: 14, padding: '15px 18px',
-          background: workMode ? '#7c3aed18' : '#141414',
-          border: `1px solid ${workMode ? '#7c3aed66' : '#2a2a2a'}`, borderRadius: 14,
-          cursor: 'pointer', textAlign: 'left', transition: 'background .15s, border-color .15s',
-        }}>
-          <span style={{ fontSize: 20 }}>💼</span>
-          <div style={{ flex: 1 }}>
-            <div style={{ color: workMode ? '#a78bfa' : '#ccc', fontSize: 14, fontWeight: 600 }}>Work mode</div>
-            <div style={{ fontSize: 11, color: '#555', marginTop: 2 }}>Show only Work in the nav bar</div>
-          </div>
-          {/* switch */}
-          <span style={{ width: 42, height: 25, borderRadius: 13, flexShrink: 0, background: workMode ? '#7c3aed' : '#2e2e2e', position: 'relative', transition: 'background .18s' }}>
-            <span style={{ position: 'absolute', top: 3, left: workMode ? 20 : 3, width: 19, height: 19, borderRadius: '50%', background: '#fff', transition: 'left .18s cubic-bezier(0.32,0.72,0,1)' }} />
-          </span>
-        </button>
-
-        {/* Admin panel button */}
-        {session.user.isAdmin && (
-          <button onClick={() => { onClose(); setTimeout(onAdmin, 200); }} style={{
-            display: 'flex', alignItems: 'center', gap: 14, padding: '15px 18px',
-            background: '#141414', border: '1px solid #2a2a2a', borderRadius: 14,
-            color: '#ccc', fontSize: 14, fontWeight: 600, cursor: 'pointer', textAlign: 'left',
-          }}>
-            <span style={{ fontSize: 20 }}>🛡️</span>
-            <div>
-              <div>Admin Panel</div>
-              <div style={{ fontSize: 11, color: '#444', marginTop: 2 }}>Manage users &amp; prayer access</div>
-            </div>
-          </button>
-        )}
-
-        {/* Sign out */}
-        <button onClick={handleSignOut} disabled={signingOut} style={{
-          padding: '15px', background: '#1a0505', border: '1px solid #ef444433',
-          borderRadius: 14, color: '#ef4444', fontSize: 14, fontWeight: 700,
-          cursor: signingOut ? 'default' : 'pointer', opacity: signingOut ? 0.6 : 1,
-        }}>
-          {signingOut ? 'Signing out…' : 'Sign out'}
-        </button>
-      </div>
+      {body(false)}
     </BottomSheet>
   );
 }
-
-// ─── Main app ─────────────────────────────────────────────────────────────────
 
 const QUICK_LINKS = [
   { label: 'IMDB Watchlist', href: 'https://www.imdb.com/watchlist', color: '#f5c518', icon: '⭐' },
@@ -250,6 +286,7 @@ export default function Home() {
   const [vaultOpen, setVault]   = useState(false);
   const [diaryOpen, setDiary]   = useState(false);
   const [filesOpen, setFiles]   = useState(false);
+  const [medicalOpen, setMedical] = useState(false);
   const [assistantOpen, setAssistant] = useState(false);
   const [workMode, setWorkMode] = useState(false);
 
@@ -328,6 +365,12 @@ export default function Home() {
         <button onClick={() => setFiles(true)} title="Files" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, color: '#444', display: 'flex', alignItems: 'center', marginRight: 4 }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M4 6a2 2 0 012-2h3l2 2h7a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2z" />
+          </svg>
+        </button>
+        {/* Medical */}
+        <button onClick={() => setMedical(true)} title="Medical history" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, color: '#444', display: 'flex', alignItems: 'center', marginRight: 4 }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
           </svg>
         </button>
         {/* Diary */}
@@ -421,7 +464,8 @@ export default function Home() {
       <Vault open={vaultOpen} onClose={() => setVault(false)} />
       <Diary open={diaryOpen} onClose={() => setDiary(false)} />
       <Files open={filesOpen} onClose={() => setFiles(false)} />
-      {LOCAL_ONLY && <Assistant open={assistantOpen} onClose={() => setAssistant(false)} />}
+      <Medical open={medicalOpen} onClose={() => setMedical(false)} />
+      {LOCAL_ONLY && <Assistant open={assistantOpen} onClose={() => setAssistant(false)} finance={false} persist={true} />}
       {isAdmin && <AdminPanel open={adminOpen} onClose={() => setAdmin(false)} />}
     </>
   );

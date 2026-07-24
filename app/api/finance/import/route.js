@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 import db from '../../../../lib/financeDb';
 import { auth } from '../../../../auth';
 import { parseWorkbook, guessColumnMapping, mappingIsValid } from '../../../../lib/statementParser';
+import { getProcessor } from '../../../../lib/finance/processors';
+import { decryptSecret } from '../../../../lib/financeCrypto';
+
+export const runtime = 'nodejs';
 
 export async function POST(req) {
   const session = await auth();
@@ -14,6 +18,22 @@ export async function POST(req) {
 
   const account = db.prepare('SELECT * FROM accounts WHERE id = ? AND user_id = ?').get(accountId, session.user.id);
   if (!account) return NextResponse.json({ error: 'Account not found' }, { status: 404 });
+
+  // dedicated processor: decrypt with the stored password + parse; no column mapping needed
+  const processor = getProcessor(account.processor);
+  if (processor) {
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const password = account.password_enc ? decryptSecret(account.password_enc) : null;
+    let parsed;
+    try { parsed = await processor.parse(buffer, { password }); }
+    catch (e) { return NextResponse.json({ error: 'Could not read file: ' + e.message }, { status: 400 }); }
+    return NextResponse.json({
+      processor: processor.meta.id,
+      totalRows: parsed.transactions.length,
+      skipped: parsed.skipped ?? 0,
+      previewTxns: parsed.transactions.slice(0, 8).map(t => ({ date: t.date, description: (t.description || '').slice(0, 64), amount: t.amount })),
+    });
+  }
 
   let headers, rows, headerRowConfident;
   try {

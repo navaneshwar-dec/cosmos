@@ -3,6 +3,11 @@ import Google from 'next-auth/providers/google';
 import sql, { initDb } from './lib/db';
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  // Derive the callback host from the incoming request (Host / X-Forwarded-Host) instead
+  // of a hardcoded NEXTAUTH_URL — so the same server works over localhost AND the Tailscale
+  // HTTPS hostname (tailscale serve sets X-Forwarded-Host/Proto). Each host you use must
+  // still be added as an authorized redirect URI in the Google OAuth client.
+  trustHost: true,
   providers: [
     Google({
       clientId:     process.env.GOOGLE_CLIENT_ID,
