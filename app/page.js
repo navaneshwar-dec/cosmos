@@ -130,6 +130,56 @@ function AdminPanel({ open, onClose }) {
 
 // ─── User menu ────────────────────────────────────────────────────────────────
 
+const pwInput = { width: '100%', background: '#161616', border: '1px solid #2a2a2a', borderRadius: 12, padding: '13px 15px', color: '#e8e8e8', fontSize: 15, outline: 'none' };
+
+function PasswordSheet({ open, onClose }) {
+  const [has, setHas] = useState(false);
+  const [pw, setPw] = useState('');
+  const [pw2, setPw2] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(null);
+  const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setPw(''); setPw2(''); setErr(null); setDone(false); setBusy(false);
+    fetch('/api/account/password').then(r => r.json()).then(d => setHas(!!d.hasPassword)).catch(() => {});
+  }, [open]);
+
+  async function save() {
+    if (pw.length < 8) { setErr('At least 8 characters.'); return; }
+    if (pw !== pw2) { setErr('Passwords don’t match.'); return; }
+    setBusy(true); setErr(null);
+    const res = await fetch('/api/account/password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pw }) });
+    setBusy(false);
+    if (!res.ok) { const d = await res.json().catch(() => ({})); setErr(d.error || 'Could not save.'); return; }
+    setDone(true); setHas(true);
+  }
+
+  return (
+    <BottomSheet open={open} onClose={onClose} title={has ? 'Change password' : 'Set a password'}>
+      <div style={{ padding: '8px 20px 36px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {done ? (
+          <div style={{ textAlign: 'center', padding: '20px 0' }}>
+            <div style={{ fontSize: 40, marginBottom: 10 }}>✅</div>
+            <div style={{ color: '#fff', fontWeight: 700, fontSize: 16 }}>Password saved</div>
+            <div style={{ fontSize: 13, color: '#666', marginTop: 6, lineHeight: 1.5 }}>Sign in with your email and this password next time.</div>
+            <button onClick={onClose} style={{ marginTop: 18, padding: '12px 24px', background: '#7c3aed', border: 'none', borderRadius: 12, color: '#fff', fontWeight: 700, cursor: 'pointer' }}>Done</button>
+          </div>
+        ) : (
+          <>
+            <div style={{ fontSize: 13, color: '#777', lineHeight: 1.55 }}>Set a password to sign in with your email as an alternative to Google. Google Drive features (Files, Medical attachments) still need Google.</div>
+            <input type="password" value={pw} onChange={e => setPw(e.target.value)} placeholder="New password (min 8 characters)" autoComplete="new-password" style={pwInput} />
+            <input type="password" value={pw2} onChange={e => setPw2(e.target.value)} placeholder="Confirm password" autoComplete="new-password" style={pwInput} />
+            {err && <div style={{ fontSize: 13, color: '#ef4444' }}>{err}</div>}
+            <button onClick={save} disabled={busy} style={{ padding: '14px', background: '#7c3aed', border: 'none', borderRadius: 12, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', opacity: busy ? 0.6 : 1 }}>{busy ? 'Saving…' : (has ? 'Change password' : 'Set password')}</button>
+          </>
+        )}
+      </div>
+    </BottomSheet>
+  );
+}
+
 function useIsDesktop() {
   const [d, setD] = useState(false);
   useEffect(() => {
@@ -141,7 +191,7 @@ function useIsDesktop() {
   return d;
 }
 
-function UserMenu({ open, onClose, session, onAdmin, workMode, onToggleWorkMode }) {
+function UserMenu({ open, onClose, session, onAdmin, onSetPassword, workMode, onToggleWorkMode }) {
   const [signingOut, setSigningOut] = useState(false);
   const desktop = useIsDesktop();
 
@@ -185,6 +235,19 @@ function UserMenu({ open, onClose, session, onAdmin, workMode, onToggleWorkMode 
         <span style={{ width: 42, height: 25, borderRadius: 13, flexShrink: 0, background: workMode ? '#7c3aed' : '#2e2e2e', position: 'relative', transition: 'background .18s' }}>
           <span style={{ position: 'absolute', top: 3, left: workMode ? 20 : 3, width: 19, height: 19, borderRadius: '50%', background: '#fff', transition: 'left .18s cubic-bezier(0.32,0.72,0,1)' }} />
         </span>
+      </button>
+
+      {/* Email + password */}
+      <button onClick={() => { onClose(); setTimeout(onSetPassword, 200); }} style={{
+        display: 'flex', alignItems: 'center', gap: 14, padding: compact ? '12px 14px' : '15px 18px',
+        background: '#141414', border: '1px solid #2a2a2a', borderRadius: 14,
+        color: '#ccc', fontSize: 14, fontWeight: 600, cursor: 'pointer', textAlign: 'left',
+      }}>
+        <span style={{ fontSize: 20 }}>🔑</span>
+        <div>
+          <div>Email password</div>
+          <div style={{ fontSize: 11, color: '#444', marginTop: 2 }}>Set a password to sign in without Google</div>
+        </div>
       </button>
 
       {/* Admin panel button */}
@@ -282,6 +345,7 @@ export default function Home() {
   const [active, setActive]     = useState('myday');
   const [userMenu, setUserMenu] = useState(false);
   const [adminOpen, setAdmin]   = useState(false);
+  const [pwOpen, setPwOpen]     = useState(false);
   const [linksOpen, setLinks]   = useState(false);
   const [vaultOpen, setVault]   = useState(false);
   const [diaryOpen, setDiary]   = useState(false);
@@ -455,6 +519,7 @@ export default function Home() {
       <UserMenu
         open={userMenu}
         onClose={() => setUserMenu(false)}
+        onSetPassword={() => setPwOpen(true)}
         session={session}
         onAdmin={() => setAdmin(true)}
         workMode={workMode}
@@ -467,6 +532,7 @@ export default function Home() {
       <Medical open={medicalOpen} onClose={() => setMedical(false)} />
       {LOCAL_ONLY && <Assistant open={assistantOpen} onClose={() => setAssistant(false)} finance={false} persist={true} />}
       {isAdmin && <AdminPanel open={adminOpen} onClose={() => setAdmin(false)} />}
+      <PasswordSheet open={pwOpen} onClose={() => setPwOpen(false)} />
     </>
   );
 }

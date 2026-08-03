@@ -3,14 +3,30 @@ import { signIn } from 'next-auth/react';
 import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 
+const inputStyle = { width: '100%', background: '#161616', border: '1px solid #2a2a2a', borderRadius: 12, padding: '14px 16px', color: '#e8e8e8', fontSize: 15, outline: 'none' };
+
 export default function Login() {
   const [loading, setLoading] = useState(false);
+  const [showEmail, setShowEmail] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [emailBusy, setEmailBusy] = useState(false);
+  const [emailErr, setEmailErr] = useState(null);
   const params = useSearchParams();
   const error  = params.get('error');
 
   async function handleGoogle() {
     setLoading(true);
     await signIn('google', { callbackUrl: '/' });
+  }
+
+  async function handleEmail(e) {
+    e.preventDefault();
+    if (!email.trim() || !password || emailBusy) return;
+    setEmailBusy(true); setEmailErr(null);
+    const res = await signIn('credentials', { email: email.trim(), password, redirect: false });
+    if (res?.error) { setEmailErr('Wrong email or password.'); setEmailBusy(false); }
+    else window.location.href = '/';
   }
 
   return (
@@ -82,6 +98,25 @@ export default function Login() {
           {loading ? 'Redirecting…' : 'Continue with Google'}
         </span>
       </button>
+
+      {/* Email + password (for existing users who set a password) */}
+      {!showEmail ? (
+        <button onClick={() => setShowEmail(true)} style={{ marginTop: 18, background: 'none', border: 'none', color: '#6a6685', fontSize: 13, fontWeight: 600, cursor: 'pointer', letterSpacing: 0.2 }}>
+          Sign in with email instead
+        </button>
+      ) : (
+        <form onSubmit={handleEmail} style={{ width: '100%', maxWidth: 340, marginTop: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" autoComplete="username" autoFocus
+            style={inputStyle} />
+          <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" autoComplete="current-password"
+            style={inputStyle} />
+          {emailErr && <div style={{ fontSize: 12.5, color: '#ef4444', textAlign: 'center' }}>{emailErr}</div>}
+          <button type="submit" disabled={emailBusy || !email.trim() || !password} style={{ padding: '14px', borderRadius: 12, border: 'none', background: '#7c3aed', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', opacity: emailBusy ? 0.6 : 1 }}>
+            {emailBusy ? 'Signing in…' : 'Sign in'}
+          </button>
+          <button type="button" onClick={() => { setShowEmail(false); setEmailErr(null); }} style={{ background: 'none', border: 'none', color: '#555', fontSize: 12.5, cursor: 'pointer', marginTop: 2 }}>← Back to Google</button>
+        </form>
+      )}
 
       <div style={{ marginTop: 24, fontSize: 12, color: '#2a2a2a', textAlign: 'center', lineHeight: 1.7 }}>
         Private &amp; personal — only your account can sign in.

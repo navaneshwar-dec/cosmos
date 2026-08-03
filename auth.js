@@ -1,6 +1,8 @@
 import NextAuth from 'next-auth';
 import Google from 'next-auth/providers/google';
+import Credentials from 'next-auth/providers/credentials';
 import sql, { initDb } from './lib/db';
+import { verifyPassword } from './lib/password';
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   // Derive the callback host from the incoming request (Host / X-Forwarded-Host) instead
@@ -22,12 +24,33 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         },
       },
     }),
+    // Email + password for existing users who set a password in their account settings.
+    // (No Google Drive access on this path — Drive needs the Google OAuth token.)
+    Credentials({
+      name: 'Email',
+      credentials: { email: { label: 'Email', type: 'email' }, password: { label: 'Password', type: 'password' } },
+      authorize: async (creds) => {
+        const email = String(creds?.email || '').trim().toLowerCase();
+        const password = String(creds?.password || '');
+        if (!email || !password) return null;
+        try {
+          await initDb();
+          const [u] = await sql`SELECT id, email, name, picture, password_hash FROM users WHERE lower(email) = ${email} LIMIT 1`;
+          if (!u || !u.password_hash || !verifyPassword(password, u.password_hash)) return null;
+          return { id: String(u.id), email: u.email, name: u.name, image: u.picture };
+        } catch (err) {
+          console.error('[auth] credentials authorize error:', err?.message ?? err);
+          return null;
+        }
+      },
+    }),
   ],
   session: { strategy: 'jwt' },
   secret: process.env.NEXTAUTH_SECRET,
   pages: { signIn: '/', error: '/' },
   callbacks: {
     async signIn({ user, account }) {
+      if (account?.provider === 'credentials') return true;   // already verified in authorize
       if (account?.provider !== 'google') return false;
       try {
         await initDb();
@@ -52,7 +75,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return true;
     },
 
-    async jwt({ token, account, profile }) {
+    async jwt({ token, user, account, profile }) {
+      // Email+password sign-in: the user is already verified in authorize().
+      if (account?.provider === 'credentials' && user) {
+        try {
+          await initDb();
+          const rows = await sql`SELECT prayer_enabled, is_admin FROM users WHERE id = ${Number(user.id)}`;
+          token.userId       = Number(user.id);
+          token.prayerEnabled = rows[0]?.prayer_enabled ?? false;
+          token.isAdmin       = rows[0]?.is_admin       ?? false;
+        } catch (err) {
+          console.error('[auth] jwt (credentials) DB error:', err?.message ?? err);
+          token.dbError = err?.message ?? String(err);
+        }
+        return token;
+      }
       if (account) {
         try {
           await initDb();
