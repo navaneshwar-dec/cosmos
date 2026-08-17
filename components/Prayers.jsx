@@ -845,6 +845,19 @@ export default function Prayers() {
             <PanPill label="నక్షత్రం" value={pan.nakshatra} />
             <PanPill label="మాసం" value={pan.masa} />
           </div>
+
+          {/* Sankalpam — built from today's panchangam, so it changes each day */}
+          {pan.sankalpam && (
+            <details style={{ marginTop: 12 }}>
+              <summary style={{ cursor: 'pointer', listStyle: 'none', display: 'flex', alignItems: 'center', gap: 7, fontSize: 12.5, fontWeight: 700, color: '#f59e0b' }}>
+                📿 నేటి సంకల్పం
+                <span style={{ fontSize: 10.5, color: 'var(--text-faint)', fontWeight: 500 }}>— {pan.samvatsara} · {pan.ayana}</span>
+              </summary>
+              <div style={{ marginTop: 10, fontSize: fontSize - 2, lineHeight: 1.85, color: 'var(--text)', whiteSpace: 'pre-line' }}>
+                {pan.sankalpam}
+              </div>
+            </details>
+          )}
         </div>
       )}
 
