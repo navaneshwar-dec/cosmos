@@ -4,15 +4,15 @@ import { createPortal } from 'react-dom';
 import { useOverlayDismiss, Grabber } from './OverlayDismiss';
 import { deriveKey, encryptJson, decryptJson, makeVerifier, checkVerifier, randomSaltB64, generatePassword } from '../lib/vaultCrypto';
 
-const inputStyle = { width: '100%', background: '#1a1a1a', border: '1px solid #262626', borderRadius: 10, padding: '13px 14px', color: '#e8e8e8', fontSize: 15, outline: 'none' };
-const label = { fontSize: 11, fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 7 };
-const primaryBtn = ok => ({ width: '100%', padding: '14px', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: ok ? 'pointer' : 'default', background: ok ? '#7c3aed' : '#222', color: ok ? '#fff' : '#555' });
+const inputStyle = { width: '100%', background: 'var(--glass-2)', border: '1px solid var(--border)', borderRadius: 10, padding: '13px 14px', color: 'var(--text)', fontSize: 15, outline: 'none' };
+const label = { fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 7 };
+const primaryBtn = ok => ({ width: '100%', padding: '14px', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: ok ? 'pointer' : 'default', background: ok ? '#7c3aed' : 'var(--border)', color: ok ? '#fff' : 'var(--text-faint)' });
 
 function Copyable({ value, mono }) {
   const [copied, setCopied] = useState(false);
   return (
     <button onClick={() => { navigator.clipboard?.writeText(value); setCopied(true); setTimeout(() => setCopied(false), 1200); }}
-      style={{ background: '#141414', border: '1px solid #262626', borderRadius: 8, padding: '4px 10px', color: copied ? '#4ade80' : '#888', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}>
+      style={{ background: 'var(--glass-1)', border: '1px solid var(--border)', borderRadius: 8, padding: '4px 10px', color: copied ? '#4ade80' : 'var(--text-dim)', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}>
       {copied ? '✓ Copied' : 'Copy'}
     </button>
   );
@@ -122,27 +122,27 @@ export default function Vault({ open, onClose }) {
   if (!open || typeof document === 'undefined') return null;
 
   return createPortal(
-    <div style={{ position: 'fixed', inset: 0, zIndex: 700, background: '#0d0d0d', display: 'flex', flexDirection: 'column', paddingTop: 'env(safe-area-inset-top, 0px)', animation: 'fadeIn 0.15s ease' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 700, background: 'transparent', display: 'flex', flexDirection: 'column', paddingTop: 'env(safe-area-inset-top, 0px)', animation: 'fadeIn 0.15s ease' }}>
       <Grabber onClose={onClose} />
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', borderBottom: '1px solid #1a1a1a', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', borderBottom: '1px solid var(--glass-2)', flexShrink: 0 }}>
         {view !== 'list' && phase === 'ready' ? (
-          <button onClick={() => { setView('list'); setSelected(null); setForm(null); }} style={{ background: 'none', border: 'none', color: '#888', fontSize: 22, cursor: 'pointer', padding: 0, lineHeight: 1 }}>‹</button>
+          <button onClick={() => { setView('list'); setSelected(null); setForm(null); }} style={{ background: 'none', border: 'none', color: 'var(--text-dim)', fontSize: 22, cursor: 'pointer', padding: 0, lineHeight: 1 }}>‹</button>
         ) : null}
         <span style={{ fontSize: 18, fontWeight: 800, color: '#fff', letterSpacing: -0.4, flex: 1 }}>🔒 Vault</span>
-        {phase === 'ready' && <button onClick={lock} style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 18, padding: '6px 13px', color: '#888', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Lock</button>}
-        <button onClick={onClose} style={{ width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1a1a1a', border: 'none', borderRadius: '50%', color: '#888', fontSize: 18, cursor: 'pointer' }}>×</button>
+        {phase === 'ready' && <button onClick={lock} style={{ background: 'var(--glass-2)', border: '1px solid var(--border)', borderRadius: 18, padding: '6px 13px', color: 'var(--text-dim)', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Lock</button>}
+        <button onClick={onClose} style={{ width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--glass-2)', border: 'none', borderRadius: '50%', color: 'var(--text-dim)', fontSize: 18, cursor: 'pointer' }}>×</button>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
 
-        {phase === 'loading' && <div style={{ textAlign: 'center', color: '#444', padding: '80px 20px' }}>Opening…</div>}
+        {phase === 'loading' && <div style={{ textAlign: 'center', color: 'var(--text-faint)', padding: '80px 20px' }}>Opening…</div>}
 
         {/* Create vault */}
         {phase === 'create' && (
           <div style={{ maxWidth: 420, margin: '0 auto', padding: '30px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div style={{ fontSize: 20, fontWeight: 800, color: '#fff' }}>Create your vault</div>
-            <div style={{ fontSize: 13, color: '#888', lineHeight: 1.6, background: '#1a1206', border: '1px solid #f59e0b33', borderRadius: 10, padding: '12px 14px' }}>
+            <div style={{ fontSize: 13, color: 'var(--text-dim)', lineHeight: 1.6, background: '#1a1206', border: '1px solid #f59e0b33', borderRadius: 10, padding: '12px 14px' }}>
               ⚠ Your master password encrypts everything on your device. It is <b>never sent to the server</b> and <b>cannot be recovered</b> — if you forget it, the vault is unreadable. Choose something strong and memorable.
             </div>
             <div><div style={label}>Master password</div><input type="password" value={pw} onChange={e => setPw(e.target.value)} style={inputStyle} autoFocus /></div>
@@ -168,26 +168,26 @@ export default function Vault({ open, onClose }) {
         {/* Unlocked — list */}
         {phase === 'ready' && view === 'list' && (
           <div style={{ maxWidth: 520, margin: '0 auto', padding: '16px 16px 40px' }}>
-            {!entries && <div style={{ color: '#444', textAlign: 'center', padding: 40 }}>Loading…</div>}
+            {!entries && <div style={{ color: 'var(--text-faint)', textAlign: 'center', padding: 40 }}>Loading…</div>}
             {entries && entries.length === 0 && (
               <div style={{ textAlign: 'center', padding: '56px 20px' }}>
                 <div style={{ fontSize: 40, marginBottom: 12 }}>🗝️</div>
-                <div style={{ fontSize: 15, color: '#444', fontWeight: 600 }}>No passwords yet</div>
-                <div style={{ fontSize: 13, color: '#2e2e2e', marginTop: 6 }}>Add your first one below</div>
+                <div style={{ fontSize: 15, color: 'var(--text-faint)', fontWeight: 600 }}>No passwords yet</div>
+                <div style={{ fontSize: 13, color: 'var(--border)', marginTop: 6 }}>Add your first one below</div>
               </div>
             )}
             {entries && entries.map(e => (
-              <button key={e.id} onClick={() => openEntry(e)} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '13px 14px', marginBottom: 7, background: '#141414', border: '1px solid #1e1e1e', borderRadius: 12, cursor: 'pointer', textAlign: 'left' }}>
+              <button key={e.id} onClick={() => openEntry(e)} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '13px 14px', marginBottom: 7, background: 'var(--glass-1)', border: '1px solid var(--border)', borderRadius: 12, cursor: 'pointer', textAlign: 'left' }}>
                 <div style={{ width: 34, height: 34, borderRadius: 9, background: '#7c3aed22', border: '1px solid #7c3aed33', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 800, color: '#a78bfa', flexShrink: 0 }}>{e.title[0]?.toUpperCase()}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 15, fontWeight: 600, color: '#f0f0f0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.title}</div>
-                  {e.url && <div style={{ fontSize: 12, color: '#555', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.url}</div>}
+                  {e.url && <div style={{ fontSize: 12, color: 'var(--text-faint)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.url}</div>}
                 </div>
-                <span style={{ color: '#333', fontSize: 16 }}>›</span>
+                <span style={{ color: 'var(--border-hi)', fontSize: 16 }}>›</span>
               </button>
             ))}
             {entries && (
-              <button onClick={newEntry} style={{ width: '100%', marginTop: 8, padding: '13px', background: 'transparent', border: '1px dashed #2a2a2a', borderRadius: 12, color: '#a78bfa', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>+ Add password</button>
+              <button onClick={newEntry} style={{ width: '100%', marginTop: 8, padding: '13px', background: 'transparent', border: '1px dashed var(--border)', borderRadius: 12, color: '#a78bfa', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>+ Add password</button>
             )}
           </div>
         )}
@@ -210,7 +210,7 @@ export default function Vault({ open, onClose }) {
             <div><div style={label}>Password</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div style={{ flex: 1, ...inputStyle, fontFamily: 'monospace', wordBreak: 'break-all', letterSpacing: reveal ? 0 : 2 }}>{reveal ? selected.secret.password : '•'.repeat(Math.min(selected.secret.password?.length || 8, 20))}</div>
-                <button onClick={() => setReveal(r => !r)} style={{ background: '#141414', border: '1px solid #262626', borderRadius: 8, padding: '4px 10px', color: '#888', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}>{reveal ? 'Hide' : 'Show'}</button>
+                <button onClick={() => setReveal(r => !r)} style={{ background: 'var(--glass-1)', border: '1px solid var(--border)', borderRadius: 8, padding: '4px 10px', color: 'var(--text-dim)', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}>{reveal ? 'Hide' : 'Show'}</button>
                 <Copyable value={selected.secret.password} />
               </div>
             </div>
@@ -222,7 +222,7 @@ export default function Vault({ open, onClose }) {
             )}
 
             <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
-              <button onClick={editEntry} style={{ flex: 1, padding: '13px', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 12, color: '#e0e0e0', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Edit</button>
+              <button onClick={editEntry} style={{ flex: 1, padding: '13px', background: 'var(--glass-2)', border: '1px solid var(--border)', borderRadius: 12, color: '#e0e0e0', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Edit</button>
               <button onClick={() => deleteEntry(selected.entry.id)} style={{ padding: '13px 18px', background: '#1a0505', border: '1px solid #ef444433', borderRadius: 12, color: '#ef4444', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Delete</button>
             </div>
           </div>

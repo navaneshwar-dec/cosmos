@@ -165,37 +165,34 @@ function RecordSheet({ open, onClose, profileId, record, onChanged }) {
   );
 }
 
-export default function Medical({ open, onClose }) {
-  const { data: profiles, mutate: mutateProfiles } = useSWR(open ? '/api/health/profiles' : null, fetcher);
+export default function Medical({ open, onClose, embedded = false }) {
+  const live = embedded || open;
+  const { data: profiles, mutate: mutateProfiles } = useSWR(live ? '/api/health/profiles' : null, fetcher);
   const [activeId, setActiveId] = useState(null);
   const [profileSheet, setProfileSheet] = useState(false);
   const [recordSheet, setRecordSheet] = useState(false);
   const [editRecord, setEditRecord] = useState(null);
-  useOverlayDismiss(open, onClose);
+  useOverlayDismiss(embedded ? false : open, onClose);
 
   useEffect(() => {
-    if (!open) return;
+    if (embedded || !open) return;
     const prev = document.body.style.overflow; document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = prev; };
-  }, [open]);
+  }, [open, embedded]);
   useEffect(() => { if (profiles && profiles.length && !profiles.find(p => p.id === activeId)) setActiveId(profiles[0].id); }, [profiles]); // eslint-disable-line
 
   const active = profiles?.find(p => p.id === activeId) || null;
   const { data: records, mutate: mutateRecords } = useSWR(active ? `/api/health/records?profileId=${active.id}` : null, fetcher);
 
-  if (!open || typeof document === 'undefined') return null;
+  if (!embedded && (!open || typeof document === 'undefined')) return null;
 
-  return createPortal(
-    <div style={{ position: 'fixed', inset: 0, zIndex: 620, display: 'flex', flexDirection: 'column', background: 'var(--bg-base)', backgroundImage: 'var(--aura)', paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)', animation: 'fadeIn 0.2s ease' }}>
-      <Grabber onClose={onClose} />
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
-        <button onClick={onClose} aria-label="Close" style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--glass-1)', border: '1px solid var(--border)', borderRadius: 10, color: 'var(--text-dim)', flexShrink: 0 }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M15 18l-6-6 6-6" /></svg>
-        </button>
-        <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', letterSpacing: -0.3 }}>Medical</span>
-        <span style={{ fontSize: 15 }}>🩺</span>
-      </div>
+  // body scrolls inside the fixed overlay; in embedded mode it flows with the page
+  const bodyStyle = embedded
+    ? { padding: '4px 14px 24px' }
+    : { flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '4px 14px 24px', minHeight: 0 };
 
+  const content = (
+    <>
       {/* Profile tabs */}
       <div style={{ display: 'flex', gap: 8, padding: '12px 14px', overflowX: 'auto', flexShrink: 0, scrollbarWidth: 'none' }}>
         {(profiles || []).map(p => {
@@ -214,7 +211,7 @@ export default function Medical({ open, onClose }) {
       </div>
 
       {/* Body */}
-      <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '4px 14px 24px', minHeight: 0 }}>
+      <div style={bodyStyle}>
         {!profiles && <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>{[0.5, 0.4].map((o, i) => <div key={i} style={{ height: 70, background: 'var(--glass-1)', borderRadius: 14, opacity: o }} />)}</div>}
 
         {profiles && profiles.length === 0 && (
@@ -271,6 +268,23 @@ export default function Medical({ open, onClose }) {
 
       <ProfileSheet open={profileSheet} onClose={() => setProfileSheet(false)} onSaved={(p) => { mutateProfiles(); setActiveId(p.id); }} />
       <RecordSheet open={recordSheet} onClose={() => setRecordSheet(false)} profileId={active?.id} record={editRecord} onChanged={() => mutateRecords()} />
+    </>
+  );
+
+  // Embedded (as a tab inside the Health module): flow inline, no overlay chrome.
+  if (embedded) return <div style={{ display: 'flex', flexDirection: 'column' }}>{content}</div>;
+
+  return createPortal(
+    <div style={{ position: 'fixed', inset: 0, zIndex: 620, display: 'flex', flexDirection: 'column', background: 'var(--bg-base)', backgroundImage: 'var(--aura)', paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)', animation: 'fadeIn 0.2s ease' }}>
+      <Grabber onClose={onClose} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+        <button onClick={onClose} aria-label="Close" style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--glass-1)', border: '1px solid var(--border)', borderRadius: 10, color: 'var(--text-dim)', flexShrink: 0 }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M15 18l-6-6 6-6" /></svg>
+        </button>
+        <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', letterSpacing: -0.3 }}>Medical</span>
+        <span style={{ fontSize: 15 }}>🩺</span>
+      </div>
+      {content}
     </div>,
     document.body,
   );

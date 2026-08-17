@@ -11,7 +11,7 @@ const PRIORITIES = [
   { v: 1, label: 'P1', color: '#ef4444', bg: '#ef444422', border: '#ef444455' },
   { v: 2, label: 'P2', color: '#f59e0b', bg: '#f59e0b22', border: '#f59e0b55' },
   { v: 3, label: 'P3', color: '#0ea5e9', bg: '#0ea5e922', border: '#0ea5e955' },
-  { v: 4, label: 'P4', color: '#6b7280', bg: '#6b728022', border: '#6b728055' },
+  { v: 4, label: 'P4', color: 'var(--text-dim)', bg: '#6b728022', border: '#6b728055' },
 ];
 const prio = v => PRIORITIES.find(p => p.v === v) ?? PRIORITIES[1];
 
@@ -75,9 +75,9 @@ function DeadlinePicker({ value, onChange }) {
 
   const chip = (active, color = '#7c3aed') => ({
     flexShrink: 0, padding: '8px 14px', borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
-    border: `1px solid ${active ? color + '88' : '#262626'}`, background: active ? color + '22' : 'transparent', color: active ? color : '#999',
+    border: `1px solid ${active ? color + '88' : 'var(--border)'}`, background: active ? color + '22' : 'transparent', color: active ? color : 'var(--text-dim)',
   });
-  const label = { fontSize: 11, fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 9 };
+  const label = { fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 9 };
 
   return (
     <div style={{ padding: '6px 18px 8px', display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -101,8 +101,8 @@ function DeadlinePicker({ value, onChange }) {
             return (
               <button key={t} onClick={() => applyTime(t)} style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '14px 8px', borderRadius: 14, cursor: 'pointer',
-                border: `1.5px solid ${active ? '#7c3aed' : '#262626'}`, background: active ? '#7c3aed1f' : '#161616',
-                color: active ? '#a78bfa' : '#aaa', fontSize: 13, fontWeight: 700,
+                border: `1.5px solid ${active ? '#7c3aed' : 'var(--border)'}`, background: active ? '#7c3aed1f' : 'var(--glass-2)',
+                color: active ? '#a78bfa' : 'var(--text-dim)', fontSize: 13, fontWeight: 700,
               }}>
                 <span style={{ fontSize: 20 }}>{icon}</span>{l}
               </button>
@@ -111,16 +111,16 @@ function DeadlinePicker({ value, onChange }) {
         </div>
         <div style={{ display: 'flex', gap: 8, marginTop: 10, alignItems: 'center' }}>
           <input type="time" value={timeStr} onChange={e => e.target.value && applyTime(e.target.value)}
-            style={{ flex: 1, background: '#161616', border: '1px solid #262626', borderRadius: 10, padding: '11px 12px', color: '#e8e8e8', fontSize: 15, outline: 'none', colorScheme: 'dark' }} />
-          <button onClick={clearTime} style={chip(!hasTime && !!base, '#6b7280')}>All day</button>
+            style={{ flex: 1, background: 'var(--glass-2)', border: '1px solid var(--border)', borderRadius: 10, padding: '11px 12px', color: 'var(--text)', fontSize: 15, outline: 'none', colorScheme: 'dark' }} />
+          <button onClick={clearTime} style={chip(!hasTime && !!base, 'var(--text-dim)')}>All day</button>
         </div>
       </div>
 
       {/* Other date fallback + clear */}
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', borderTop: '1px solid #1c1c1c', paddingTop: 14 }}>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', borderTop: '1px solid var(--glass-2)', paddingTop: 14 }}>
         <input type="date" value={base ? `${base.getFullYear()}-${String(base.getMonth() + 1).padStart(2, '0')}-${String(base.getDate()).padStart(2, '0')}` : ''}
           onChange={e => { if (e.target.value) { const [y, m, dd] = e.target.value.split('-').map(Number); applyDay(new Date(y, m - 1, dd)); } }}
-          style={{ flex: 1, background: '#161616', border: '1px solid #262626', borderRadius: 10, padding: '11px 12px', color: base ? '#e8e8e8' : '#555', fontSize: 14, outline: 'none', colorScheme: 'dark' }} />
+          style={{ flex: 1, background: 'var(--glass-2)', border: '1px solid var(--border)', borderRadius: 10, padding: '11px 12px', color: base ? 'var(--text)' : 'var(--text-faint)', fontSize: 14, outline: 'none', colorScheme: 'dark' }} />
         {base && <button onClick={() => onChange(null)} style={chip(false, '#ef4444')}>Clear</button>}
       </div>
     </div>
@@ -161,8 +161,8 @@ function PriorityPills({ value, onChange, big }) {
         return (
           <button key={p.v} onClick={() => onChange(p.v)} style={{
             flex: 1, padding: big ? '9px 0' : '7px 0', borderRadius: 9, cursor: 'pointer',
-            border: `1.5px solid ${active ? p.color : '#262626'}`, background: active ? p.bg : 'transparent',
-            color: active ? p.color : '#5a5a5a', fontSize: big ? 14 : 13, fontWeight: 800, letterSpacing: 0.3, transition: 'all 0.12s',
+            border: `1.5px solid ${active ? p.color : 'var(--border)'}`, background: active ? p.bg : 'transparent',
+            color: active ? p.color : 'var(--text-faint)', fontSize: big ? 14 : 13, fontWeight: 800, letterSpacing: 0.3, transition: 'all 0.12s',
           }}>{p.label}</button>
         );
       })}
@@ -196,14 +196,14 @@ function LabelField({ labels, onChange, allLabels = [] }) {
   const suggestions = allLabels.filter(l => !labels.includes(l) && (d === '' || l.includes(d))).slice(0, 10);
   return (
     <div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', minHeight: 44, padding: '6px 12px', background: '#1a1a1a', border: '1px solid #252525', borderRadius: 10 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', minHeight: 44, padding: '6px 12px', background: 'var(--glass-2)', border: '1px solid var(--border)', borderRadius: 10 }}>
         {labels.map(l => { const c = labelColor(l); return (
           <span key={l} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 600, padding: '4px 10px', borderRadius: 12, background: c.bg, color: c.text, border: `1px solid ${c.border}` }}>
             {l}<button onClick={() => onChange(labels.filter(x => x !== l))} style={{ background: 'none', border: 'none', color: c.text, cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 0, opacity: 0.6 }}>×</button>
           </span>
         ); })}
         <input value={draft} onChange={e => setDraft(e.target.value)} onKeyDown={onKey} onBlur={() => draft.trim() && add(draft)}
-          placeholder={labels.length === 0 ? 'Add labels…' : ''} style={{ border: 'none', outline: 'none', background: 'transparent', color: '#e8e8e8', fontSize: 14, minWidth: 90, flex: 1, height: 30 }} />
+          placeholder={labels.length === 0 ? 'Add labels…' : ''} style={{ border: 'none', outline: 'none', background: 'transparent', color: 'var(--text)', fontSize: 14, minWidth: 90, flex: 1, height: 30 }} />
       </div>
       {suggestions.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
@@ -239,16 +239,16 @@ function AssigneeChips({ value, people, onSelect, onAddPerson }) {
         <input autoFocus value={draft} onChange={e => setDraft(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') { setAdding(false); setDraft(''); } }}
           onBlur={commit} placeholder="Name…"
-          style={{ padding: '5px 12px', borderRadius: 16, fontSize: 13, background: '#1a1a1a', border: '1px solid #7c3aed55', outline: 'none', color: '#e8e8e8', width: 100 }} />
+          style={{ padding: '5px 12px', borderRadius: 16, fontSize: 13, background: 'var(--glass-2)', border: '1px solid #7c3aed55', outline: 'none', color: 'var(--text)', width: 100 }} />
       ) : (
-        <button onClick={() => setAdding(true)} style={{ padding: '5px 12px', borderRadius: 16, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: '1px dashed #2a2a2a', background: 'transparent', color: '#555' }}>+ Add</button>
+        <button onClick={() => setAdding(true)} style={{ padding: '5px 12px', borderRadius: 16, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: '1px dashed var(--border)', background: 'transparent', color: 'var(--text-faint)' }}>+ Add</button>
       )}
     </div>
   );
 }
 
 // ─── Edit sheet ──────────────────────────────────────────────────────────────
-const FIELD_LABEL = { fontSize: 11, fontWeight: 700, color: '#444', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 8 };
+const FIELD_LABEL = { fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 8 };
 
 function WorkEditSheet({ item, people, onClose, onSave, onDelete, onAddPerson, allLabels = [] }) {
   const [title, setTitle]       = useState('');
@@ -272,7 +272,7 @@ function WorkEditSheet({ item, people, onClose, onSave, onDelete, onAddPerson, a
       {item && (
         <div style={{ padding: '12px 20px 36px', display: 'flex', flexDirection: 'column', gap: 18 }}>
           <input value={title} onChange={e => setTitle(e.target.value)} onBlur={() => title.trim() && title !== item.title && push({ title })}
-            style={{ width: '100%', background: '#1a1a1a', border: '1px solid #252525', borderRadius: 10, padding: '12px 14px', color: '#fff', fontSize: 16, fontWeight: 600, outline: 'none' }} />
+            style={{ width: '100%', background: 'var(--glass-2)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 14px', color: '#fff', fontSize: 16, fontWeight: 600, outline: 'none' }} />
 
           <div>
             <div style={FIELD_LABEL}>Priority</div>
@@ -280,13 +280,13 @@ function WorkEditSheet({ item, people, onClose, onSave, onDelete, onAddPerson, a
           </div>
 
           <div>
-            <div style={FIELD_LABEL}>Deadline {priority === 1 && <span style={{ color: '#555', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>· P1 stays on top regardless</span>}</div>
+            <div style={FIELD_LABEL}>Deadline {priority === 1 && <span style={{ color: 'var(--text-faint)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>· P1 stays on top regardless</span>}</div>
             <button onClick={() => setShowCal(s => !s)} style={{
               width: '100%', textAlign: 'left', padding: '11px 14px', borderRadius: 10, cursor: 'pointer',
-              background: '#1a1a1a', border: `1px solid ${deadline ? '#7c3aed44' : '#252525'}`, color: deadline ? '#a78bfa' : '#555', fontSize: 14, fontWeight: 600,
+              background: 'var(--glass-2)', border: `1px solid ${deadline ? '#7c3aed44' : 'var(--border)'}`, color: deadline ? '#a78bfa' : 'var(--text-faint)', fontSize: 14, fontWeight: 600,
             }}>{deadline ? formatDeadline(deadline) : 'Set a deadline'}{deadline && <span onClick={e => { e.stopPropagation(); setDeadline(null); push({ deadline: null }); }} style={{ float: 'right', opacity: 0.5 }}>×</span>}</button>
             {showCal && (
-              <div style={{ marginTop: 8, background: '#141414', border: '1px solid #2a2a2a', borderRadius: 12, overflow: 'hidden', paddingBottom: 6 }}>
+              <div style={{ marginTop: 8, background: 'var(--glass-1)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', paddingBottom: 6 }}>
                 <DeadlinePicker value={deadline} onChange={v => { setDeadline(v); push({ deadline: v }); }} />
               </div>
             )}
@@ -307,7 +307,7 @@ function WorkEditSheet({ item, people, onClose, onSave, onDelete, onAddPerson, a
             <div style={FIELD_LABEL}>Notes</div>
             <textarea value={notes} onChange={e => setNotes(e.target.value)} onBlur={() => notes !== (item.notes ?? '') && push({ notes: notes.trim() || null })}
               placeholder="Add detail…" rows={3}
-              style={{ width: '100%', background: '#1a1a1a', border: '1px solid #252525', borderRadius: 10, padding: '12px 14px', color: '#e0e0e0', fontSize: 14, resize: 'none', outline: 'none', fontFamily: 'inherit', lineHeight: 1.5 }} />
+              style={{ width: '100%', background: 'var(--glass-2)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 14px', color: '#e0e0e0', fontSize: 14, resize: 'none', outline: 'none', fontFamily: 'inherit', lineHeight: 1.5 }} />
           </div>
 
           <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
@@ -318,7 +318,7 @@ function WorkEditSheet({ item, people, onClose, onSave, onDelete, onAddPerson, a
             }} style={{ flex: 1, padding: '14px', background: '#7c3aed', border: 'none', borderRadius: 12, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>Done</button>
             <button onClick={() => { onDelete(item.id); onClose(); }} title="Delete" style={{ padding: '14px 18px', background: '#1a0505', border: '1px solid #ef444433', borderRadius: 12, color: '#ef4444', fontSize: 14, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>Delete</button>
           </div>
-          <div style={{ textAlign: 'center', fontSize: 11, color: '#3a3a3a', marginTop: 2 }}>Changes save automatically</div>
+          <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--border-hi)', marginTop: 2 }}>Changes save automatically</div>
         </div>
       )}
     </Modal>
@@ -337,27 +337,27 @@ function AgendaRow({ item, showAssignee, onToggle, onOpen, hideDate, now, rowRef
   const labels = item.labels || [];
   return (
     <div ref={rowRef} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '11px 13px', marginBottom: 7,
-      background: dragging ? '#1e1e1e' : now ? 'rgba(239,68,68,0.10)' : '#131313',
-      border: `1px solid ${dragging ? '#7c3aed88' : now ? 'rgba(239,68,68,0.30)' : isOverdue(dl) ? '#ef444422' : '#1c1c1c'}`,
+      background: dragging ? 'var(--border)' : now ? 'rgba(239,68,68,0.10)' : 'var(--glass-1)',
+      border: `1px solid ${dragging ? '#7c3aed88' : now ? 'rgba(239,68,68,0.30)' : isOverdue(dl) ? '#ef444422' : 'var(--glass-2)'}`,
       borderRadius: 11, opacity: item.completed ? 0.45 : 1,
       boxShadow: dragging ? '0 10px 28px rgba(0,0,0,0.55)' : 'none',
       ...(rowStyle || {}) }}>
       {handleProps && (
-        <span {...handleProps} aria-label="Drag to reorder" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, cursor: 'grab', touchAction: 'none', color: dragging ? '#a78bfa' : '#4a4a4a', marginLeft: -3 }}>
+        <span {...handleProps} aria-label="Drag to reorder" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, cursor: 'grab', touchAction: 'none', color: dragging ? '#a78bfa' : 'var(--text-faint)', marginLeft: -3 }}>
           <svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"/><circle cx="9" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="9" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="9" cy="13" r="1.3"/></svg>
         </span>
       )}
-      <button onClick={() => onToggle(item.id)} style={{ width: 21, height: 21, borderRadius: 6, border: `2px solid ${item.completed ? '#7c3aed' : '#333'}`, background: item.completed ? '#7c3aed' : 'transparent', cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 800 }}>{item.completed && '✓'}</button>
+      <button onClick={() => onToggle(item.id)} style={{ width: 21, height: 21, borderRadius: 6, border: `2px solid ${item.completed ? '#7c3aed' : 'var(--border-hi)'}`, background: item.completed ? '#7c3aed' : 'transparent', cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 800 }}>{item.completed && '✓'}</button>
       <span style={{ fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 5, background: p.bg, color: p.color, flexShrink: 0 }}>{p.label}</span>
       <button onClick={() => onOpen(item)} style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 8,
         overflow: 'hidden' }}>
-        <span style={{ fontSize: 14, color: item.completed ? '#444' : '#e8e8e8', textDecoration: item.completed ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</span>
+        <span style={{ fontSize: 14, color: item.completed ? 'var(--text-faint)' : 'var(--text)', textDecoration: item.completed ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</span>
         {labels.map(l => { const c = labelColor(l); return (
           <span key={l} style={{ flexShrink: 0, fontSize: 10, fontWeight: 600, padding: '1px 7px', borderRadius: 8, background: c.bg, color: c.text, border: `1px solid ${c.border}` }}>{l}</span>
         ); })}
       </button>
       {showAssignee && item.assignee_id && (
-        <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#8a8a8a', flexShrink: 0 }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'var(--text-dim)', flexShrink: 0 }}>
           <Avatar name={item.assignee_name} color={item.assignee_color} size={16} />{item.assignee_name}
         </span>
       )}
@@ -372,7 +372,7 @@ function AgendaRow({ item, showAssignee, onToggle, onOpen, hideDate, now, rowRef
             : null;
         }
         return (
-          <span style={{ fontSize: 12, fontWeight: 600, color: isOverdue(dl) ? '#ef4444' : isToday(dl) ? '#a78bfa' : '#8a8a8a', flexShrink: 0 }}>
+          <span style={{ fontSize: 12, fontWeight: 600, color: isOverdue(dl) ? '#ef4444' : isToday(dl) ? '#a78bfa' : 'var(--text-dim)', flexShrink: 0 }}>
             {isOverdue(dl) ? `⚠ ${relDays(dl)}` : formatDeadline(dl)}
           </span>
         );
@@ -559,20 +559,20 @@ export default function Work() {
   const SECTIONS = [
     { key: 'overdue', label: 'Overdue',   color: '#ef4444' },
     { key: 'today',   label: 'Today',     color: '#a78bfa' },
-    { key: 'week',    label: 'This week', color: '#555' },
-    { key: 'later',   label: 'Later',     color: '#555' },
-    { key: 'nodate',  label: 'No deadline', color: '#555' },
+    { key: 'week',    label: 'This week', color: 'var(--text-faint)' },
+    { key: 'later',   label: 'Later',     color: 'var(--text-faint)' },
+    { key: 'nodate',  label: 'No deadline', color: 'var(--text-faint)' },
   ];
   const overdueCount = active.filter(i => i.priority !== 1 && isOverdue(i.deadline)).length;
   const todayCount   = active.filter(i => isToday(i.deadline)).length;
 
   const composer = (
     <div className="work-composer">
-      <div style={{ background: '#161616', border: '1px solid #262626', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.35)' }}>
+      <div style={{ background: 'var(--glass-2)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.35)' }}>
         <div style={{ padding: '10px 12px 0' }}><PriorityPills value={addPrio} onChange={setAddPrio} /></div>
         <div style={{ display: 'flex', alignItems: 'center', padding: '4px 6px 4px 14px', gap: 8 }}>
           <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && addItem()}
-            placeholder="Add a priority…" style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: '#e8e8e8', fontSize: 18, fontWeight: 500, padding: '18px 0' }} />
+            placeholder="Add a priority…" style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'var(--text)', fontSize: 18, fontWeight: 500, padding: '18px 0' }} />
           {input.trim() && <button onClick={addItem} style={{ padding: '9px 18px', background: '#7c3aed', border: 'none', borderRadius: 10, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>Add</button>}
         </div>
         <div style={{ display: 'flex', gap: 8, padding: '0 12px 10px' }}>
@@ -605,14 +605,14 @@ export default function Work() {
   return (
     <>
       {/* Toolbar */}
-      <div style={{ position: 'sticky', top: 0, zIndex: 20, background: 'rgba(13,13,13,0.96)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderBottom: '1px solid #1a1a1a' }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 20, background: 'rgba(13,13,13,0.96)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderBottom: '1px solid var(--glass-2)' }}>
         <div style={{ display: 'flex', gap: 4, padding: '10px 14px' }}>
           {[{ id: 'mine', label: 'My Work' }, { id: 'team', label: 'Team' }].map(t => {
             const on = view === t.id;
             return (
               <button key={t.id} onClick={() => { setView(t.id); setAssigneeFilter(null); }} style={{
                 padding: '7px 16px', borderRadius: 20, border: 'none', background: on ? '#7c3aed22' : 'transparent',
-                color: on ? '#a78bfa' : '#555', fontSize: 13, fontWeight: on ? 700 : 400, cursor: 'pointer',
+                color: on ? '#a78bfa' : 'var(--text-faint)', fontSize: 13, fontWeight: on ? 700 : 400, cursor: 'pointer',
               }}>{t.label}</button>
             );
           })}
@@ -630,9 +630,9 @@ export default function Work() {
         )}
         {allWorkLabels.length > 0 && (
           <div style={{ display: 'flex', gap: 6, padding: '0 14px 10px', overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
-            {labelFilter && <button onClick={() => setLabelFilter(null)} style={pchip(false, '#6b7280')}>× All</button>}
+            {labelFilter && <button onClick={() => setLabelFilter(null)} style={pchip(false, 'var(--text-dim)')}>× All</button>}
             {allWorkLabels.map(l => { const c = labelColor(l), on = labelFilter === l; return (
-              <button key={l} onClick={() => setLabelFilter(on ? null : l)} style={{ flexShrink: 0, fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 12, whiteSpace: 'nowrap', border: `1px solid ${on ? c.border : '#2a2a2a'}`, background: on ? c.bg : 'transparent', color: on ? c.text : '#666', cursor: 'pointer' }}>{l}</button>
+              <button key={l} onClick={() => setLabelFilter(on ? null : l)} style={{ flexShrink: 0, fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 12, whiteSpace: 'nowrap', border: `1px solid ${on ? c.border : 'var(--border)'}`, background: on ? c.bg : 'transparent', color: on ? c.text : 'var(--text-faint)', cursor: 'pointer' }}>{l}</button>
             ); })}
           </div>
         )}
@@ -650,18 +650,18 @@ export default function Work() {
         <div className="work-main work-scroll-pad">
           <Pomodoro items={active} />
 
-          {!rawItems && <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>{[0.4, 0.6, 0.5].map((o, i) => <div key={i} style={{ height: 54, background: '#161616', borderRadius: 11, opacity: o }} />)}</div>}
+          {!rawItems && <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>{[0.4, 0.6, 0.5].map((o, i) => <div key={i} style={{ height: 54, background: 'var(--glass-2)', borderRadius: 11, opacity: o }} />)}</div>}
 
           {rawItems && active.length === 0 && doneList.length === 0 && (
             <div style={{ textAlign: 'center', padding: '60px 20px' }}>
               <div style={{ fontSize: 44, marginBottom: 12 }}>🎯</div>
-              <div style={{ fontSize: 16, color: '#444', fontWeight: 600 }}>{view === 'mine' ? 'No priorities yet' : 'Nothing assigned'}</div>
-              <div style={{ fontSize: 13, color: '#2e2e2e', marginTop: 6 }}>Add a priority to get started</div>
+              <div style={{ fontSize: 16, color: 'var(--text-faint)', fontWeight: 600 }}>{view === 'mine' ? 'No priorities yet' : 'Nothing assigned'}</div>
+              <div style={{ fontSize: 13, color: 'var(--border)', marginTop: 6 }}>Add a priority to get started</div>
             </div>
           )}
 
           {/* P1 · Now strip — drag to reorder */}
-          {p1s.length > 0 && <div style={{ fontSize: 11, fontWeight: 800, color: '#ef4444', letterSpacing: 1.2, textTransform: 'uppercase', padding: '2px 2px 8px' }}>🔴 Now{p1s.length > 1 && <span style={{ color: '#3a3a3a', fontWeight: 600, letterSpacing: 0, textTransform: 'none', marginLeft: 8 }}>drag ⠿ to reorder</span>}</div>}
+          {p1s.length > 0 && <div style={{ fontSize: 11, fontWeight: 800, color: '#ef4444', letterSpacing: 1.2, textTransform: 'uppercase', padding: '2px 2px 8px' }}>🔴 Now{p1s.length > 1 && <span style={{ color: 'var(--border-hi)', fontWeight: 600, letterSpacing: 0, textTransform: 'none', marginLeft: 8 }}>drag ⠿ to reorder</span>}</div>}
           {p1s.length > 0 && <P1List items={p1s} showAssignee={showAssignee} onToggle={toggle} onOpen={setEditItem} onReorder={reorderP1} />}
 
           {/* Time-bucketed sections */}
@@ -672,7 +672,7 @@ export default function Work() {
               <div key={sec.key}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 2px 8px' }}>
                   <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase', color: sec.color }}>{sec.label}</span>
-                  <span style={{ flex: 1, height: 1, background: '#1b1b1b' }} />
+                  <span style={{ flex: 1, height: 1, background: 'var(--glass-2)' }} />
                 </div>
                 {secItems.map(i => <AgendaRow key={i.id} item={i} showAssignee={showAssignee} onToggle={toggle} onOpen={setEditItem} hideDate={sec.key === 'today'} />)}
               </div>
@@ -680,7 +680,7 @@ export default function Work() {
           })}
 
           {doneList.length > 0 && (
-            <button onClick={() => setShowDone(s => !s)} style={{ margin: '12px 0 4px', background: 'none', border: 'none', color: '#444', fontSize: 12, cursor: 'pointer' }}>
+            <button onClick={() => setShowDone(s => !s)} style={{ margin: '12px 0 4px', background: 'none', border: 'none', color: 'var(--text-faint)', fontSize: 12, cursor: 'pointer' }}>
               {showDone ? '▾' : '▸'} {doneList.length} done
             </button>
           )}
@@ -690,9 +690,9 @@ export default function Work() {
         <div className="work-rail">
           {composer}
           <div className="work-summary">
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.6, textTransform: 'uppercase', color: '#4f4f4f', margin: '4px 4px 12px' }}>At a glance</div>
-            {[['Overdue', overdueCount, '#ef4444'], ['Due today', todayCount, '#e8e8e8'], ['P1 now', p1s.length, '#ef4444'], ['Total open', active.length, '#e8e8e8']].map(([label, n, c]) => (
-              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#777', padding: '8px 4px', borderBottom: '1px solid #181818' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.6, textTransform: 'uppercase', color: 'var(--text-faint)', margin: '4px 4px 12px' }}>At a glance</div>
+            {[['Overdue', overdueCount, '#ef4444'], ['Due today', todayCount, 'var(--text)'], ['P1 now', p1s.length, '#ef4444'], ['Total open', active.length, 'var(--text)']].map(([label, n, c]) => (
+              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--text-faint)', padding: '8px 4px', borderBottom: '1px solid var(--glass-2)' }}>
                 <span>{label}</span><b style={{ color: c, fontVariantNumeric: 'tabular-nums' }}>{n}</b>
               </div>
             ))}
@@ -707,10 +707,10 @@ export default function Work() {
 
 const pchip = (active, color) => ({
   flexShrink: 0, padding: '5px 12px', borderRadius: 14, fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
-  border: `1px solid ${active ? color + '77' : '#2a2a2a'}`, background: active ? color + '22' : 'transparent', color: active ? color : '#888',
+  border: `1px solid ${active ? color + '77' : 'var(--border)'}`, background: active ? color + '22' : 'transparent', color: active ? color : 'var(--text-dim)',
 });
 const metaBtn = active => ({
   flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 10px', borderRadius: 10, cursor: 'pointer',
-  border: `1px solid ${active ? '#7c3aed55' : '#262626'}`, background: active ? '#7c3aed18' : 'transparent',
-  color: active ? '#a78bfa' : '#666', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+  border: `1px solid ${active ? '#7c3aed55' : 'var(--border)'}`, background: active ? '#7c3aed18' : 'transparent',
+  color: active ? '#a78bfa' : 'var(--text-faint)', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
 });

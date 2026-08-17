@@ -119,8 +119,8 @@ export default function DatePicker({ value, recurrence, onChange, onChangeRecurr
 
   return (
     <div style={{
-      background: fullWidth ? 'transparent' : '#161616',
-      border: fullWidth ? 'none' : '1px solid #2a2a2a',
+      background: fullWidth ? 'transparent' : 'var(--glass-2)',
+      border: fullWidth ? 'none' : '1px solid var(--border)',
       borderRadius: fullWidth ? 0 : 14,
       overflow: 'hidden',
       width: fullWidth ? '100%' : 280,
@@ -137,7 +137,7 @@ export default function DatePicker({ value, recurrence, onChange, onChangeRecurr
           padding: '6px 12px',
           fontSize: 13,
           fontWeight: 700,
-          color: selected ? '#a78bfa' : '#444',
+          color: selected ? '#a78bfa' : 'var(--text-faint)',
           marginBottom: 8,
         }}>
           {selected ? fmt(selected) + (showTime ? ` at ${timeVal}` : '') : 'No date'}
@@ -157,17 +157,17 @@ export default function DatePicker({ value, recurrence, onChange, onChangeRecurr
               cursor: 'pointer', textAlign: 'left',
               transition: 'background 0.1s',
             }}
-            onMouseEnter={e => e.currentTarget.style.background = '#222'}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--border)'}
             onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
           >
-            <span style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#222', borderRadius: 7, fontSize: 14, flexShrink: 0 }}>{opt.icon}</span>
-            <span style={{ flex: 1, color: '#ccc', fontSize: 13 }}>{opt.label}</span>
-            <span style={{ color: '#555', fontSize: 12 }}>{opt.right}</span>
+            <span style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--border)', borderRadius: 7, fontSize: 14, flexShrink: 0 }}>{opt.icon}</span>
+            <span style={{ flex: 1, color: 'var(--text-dim)', fontSize: 13 }}>{opt.label}</span>
+            <span style={{ color: 'var(--text-faint)', fontSize: 12 }}>{opt.right}</span>
           </button>
         ))}
       </div>
 
-      <div style={{ height: 1, background: '#222', margin: '4px 0' }} />
+      <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
 
       {/* Calendar header */}
       <div style={{ display: 'flex', alignItems: 'center', padding: '10px 14px 6px', gap: 4 }}>
@@ -175,14 +175,14 @@ export default function DatePicker({ value, recurrence, onChange, onChangeRecurr
           {MONTHS[viewM]} {viewY}
         </span>
         <button onClick={prevMonth} style={navBtn}>‹</button>
-        <button onClick={() => { setViewY(now.getFullYear()); setViewM(now.getMonth()); }} style={{ ...navBtn, fontSize: 10, color: '#555' }}>●</button>
+        <button onClick={() => { setViewY(now.getFullYear()); setViewM(now.getMonth()); }} style={{ ...navBtn, fontSize: 10, color: 'var(--text-faint)' }}>●</button>
         <button onClick={nextMonth} style={navBtn}>›</button>
       </div>
 
       {/* Weekday headers */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', padding: '0 10px', gap: 2 }}>
         {WEEKDAYS.map((d, i) => (
-          <div key={i} style={{ textAlign: 'center', fontSize: 11, color: '#444', padding: '2px 0', fontWeight: 600 }}>{d}</div>
+          <div key={i} style={{ textAlign: 'center', fontSize: 11, color: 'var(--text-faint)', padding: '2px 0', fontWeight: 600 }}>{d}</div>
         ))}
       </div>
 
@@ -200,14 +200,14 @@ export default function DatePicker({ value, recurrence, onChange, onChangeRecurr
                 borderRadius: 7,
                 border: 'none',
                 background: sel ? '#7c3aed' : 'transparent',
-                color: sel ? '#fff' : day.outside ? '#333' : today ? '#f87171' : '#ccc',
+                color: sel ? '#fff' : day.outside ? 'var(--border-hi)' : today ? '#f87171' : 'var(--text-dim)',
                 fontSize: 12,
                 fontWeight: sel || today ? 700 : 400,
                 cursor: 'pointer',
                 textAlign: 'center',
                 transition: 'background 0.1s',
               }}
-              onMouseEnter={e => { if (!sel) e.currentTarget.style.background = '#2a2a2a'; }}
+              onMouseEnter={e => { if (!sel) e.currentTarget.style.background = 'var(--border)'; }}
               onMouseLeave={e => { if (!sel) e.currentTarget.style.background = 'transparent'; }}
             >
               {day.d}
@@ -216,7 +216,7 @@ export default function DatePicker({ value, recurrence, onChange, onChangeRecurr
         })}
       </div>
 
-      <div style={{ height: 1, background: '#1e1e1e' }} />
+      <div style={{ height: 1, background: 'var(--border)' }} />
 
       {/* Time */}
       <button
@@ -224,8 +224,8 @@ export default function DatePicker({ value, recurrence, onChange, onChangeRecurr
         style={{
           width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
           padding: '11px 14px', background: showTime ? '#7c3aed11' : 'transparent',
-          border: 'none', borderBottom: '1px solid #1e1e1e',
-          color: showTime ? '#a78bfa' : '#666', fontSize: 13, cursor: 'pointer',
+          border: 'none', borderBottom: '1px solid var(--border)',
+          color: showTime ? '#a78bfa' : 'var(--text-faint)', fontSize: 13, cursor: 'pointer',
           transition: 'all 0.15s',
         }}
       >
@@ -233,13 +233,13 @@ export default function DatePicker({ value, recurrence, onChange, onChangeRecurr
       </button>
 
       {showTime && (
-        <div style={{ padding: '10px 14px', borderBottom: '1px solid #1e1e1e' }}>
+        <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)' }}>
           <input
             type="time"
             value={timeVal}
             onChange={e => applyTime(e.target.value)}
             style={{
-              width: '100%', background: '#1e1e1e', border: '1px solid #2a2a2a',
+              width: '100%', background: 'var(--border)', border: '1px solid var(--border)',
               borderRadius: 8, padding: '8px 12px', color: '#e0e0e0', fontSize: 14,
               outline: 'none', colorScheme: 'dark',
             }}
@@ -249,9 +249,9 @@ export default function DatePicker({ value, recurrence, onChange, onChangeRecurr
             {['07:00','09:00','12:00','18:00','21:00'].map(t => (
               <button key={t} onClick={() => applyTime(t)} style={{
                 padding: '4px 10px', borderRadius: 20,
-                border: `1px solid ${timeVal === t ? '#7c3aed' : '#2a2a2a'}`,
+                border: `1px solid ${timeVal === t ? '#7c3aed' : 'var(--border)'}`,
                 background: timeVal === t ? '#7c3aed22' : 'transparent',
-                color: timeVal === t ? '#a78bfa' : '#555',
+                color: timeVal === t ? '#a78bfa' : 'var(--text-faint)',
                 fontSize: 11, cursor: 'pointer', fontWeight: 600,
               }}>{t}</button>
             ))}
@@ -267,7 +267,7 @@ export default function DatePicker({ value, recurrence, onChange, onChangeRecurr
           width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
           padding: '11px 14px', background: (recurrence && recurrence !== null) ? '#7c3aed11' : 'transparent',
           border: 'none',
-          color: (recurrence && recurrence !== null) ? '#a78bfa' : '#666', fontSize: 13, cursor: 'pointer',
+          color: (recurrence && recurrence !== null) ? '#a78bfa' : 'var(--text-faint)', fontSize: 13, cursor: 'pointer',
           transition: 'all 0.15s',
         }}
       >
@@ -290,11 +290,11 @@ export default function DatePicker({ value, recurrence, onChange, onChangeRecurr
               style={{
                 padding: '8px 10px', borderRadius: 8, border: 'none', textAlign: 'left',
                 background: recurrence === opt.value ? '#7c3aed22' : 'transparent',
-                color: recurrence === opt.value ? '#a78bfa' : '#aaa',
+                color: recurrence === opt.value ? '#a78bfa' : 'var(--text-dim)',
                 fontSize: 13, cursor: 'pointer', fontWeight: recurrence === opt.value ? 600 : 400,
                 transition: 'background 0.1s',
               }}
-              onMouseEnter={e => { if (recurrence !== opt.value) e.currentTarget.style.background = '#222'; }}
+              onMouseEnter={e => { if (recurrence !== opt.value) e.currentTarget.style.background = 'var(--border)'; }}
               onMouseLeave={e => { if (recurrence !== opt.value) e.currentTarget.style.background = 'transparent'; }}
             >
               {opt.label}
@@ -309,6 +309,6 @@ export default function DatePicker({ value, recurrence, onChange, onChangeRecurr
 
 const navBtn = {
   width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
-  background: 'transparent', border: 'none', color: '#666', fontSize: 18,
+  background: 'transparent', border: 'none', color: 'var(--text-faint)', fontSize: 18,
   cursor: 'pointer', borderRadius: 6, transition: 'all 0.1s',
 };

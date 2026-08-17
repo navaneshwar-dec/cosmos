@@ -173,7 +173,7 @@ function LogSheet({ open, onClose, ex, day, existingLog, t, onSaved }) {
           {/* Planned chips */}
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {[{ icon: '📋', label: `${ex.sets} sets planned` }, { icon: '🔁', label: ex.reps + ' reps' }, { icon: '💪', label: ex.muscle }].map(c => (
-              <span key={c.label} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, padding: '4px 10px', borderRadius: 20, background: '#1e1e1e', color: '#888', border: '1px solid #2a2a2a' }}>
+              <span key={c.label} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, padding: '4px 10px', borderRadius: 20, background: 'var(--border)', color: 'var(--text-dim)', border: '1px solid var(--border)' }}>
                 {c.icon} {c.label}
               </span>
             ))}
@@ -183,9 +183,9 @@ function LogSheet({ open, onClose, ex, day, existingLog, t, onSaved }) {
           <button onClick={() => setSkipped(s => !s)} style={{
             display: 'flex', alignItems: 'center', gap: 10,
             padding: '12px 16px', borderRadius: 12,
-            background: skipped ? '#ef444418' : '#1a1a1a',
-            border: `1px solid ${skipped ? '#ef444466' : '#2a2a2a'}`,
-            color: skipped ? '#ef4444' : '#555', fontSize: 14, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s',
+            background: skipped ? '#ef444418' : 'var(--glass-2)',
+            border: `1px solid ${skipped ? '#ef444466' : 'var(--border)'}`,
+            color: skipped ? '#ef4444' : 'var(--text-faint)', fontSize: 14, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s',
           }}>
             <span style={{ fontSize: 18 }}>{skipped ? '✓' : '○'}</span>
             {skipped ? 'Marked as skipped — tap to undo' : 'Skip this exercise'}
@@ -193,10 +193,10 @@ function LogSheet({ open, onClose, ex, day, existingLog, t, onSaved }) {
 
           {skipped ? (
             <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#444', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 8 }}>Reason (optional)</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 8 }}>Reason (optional)</div>
               <input value={skipReason} onChange={e => setSkipReason(e.target.value)}
                 placeholder="e.g. Equipment taken, injury, time…"
-                style={{ width: '100%', background: '#111', border: '1px solid #2a2a2a', borderRadius: 10, padding: '12px 14px', color: '#e0e0e0', fontSize: 14, outline: 'none' }}
+                style={{ width: '100%', background: 'var(--glass-1)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 14px', color: '#e0e0e0', fontSize: 14, outline: 'none' }}
               />
             </div>
           ) : (
@@ -205,15 +205,15 @@ function LogSheet({ open, onClose, ex, day, existingLog, t, onSaved }) {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#e0e0e0' }}>
                   {sets.length} sets
-                  {hasWeight && <span style={{ marginLeft: 8, fontSize: 12, color: '#555', fontWeight: 400 }}>
+                  {hasWeight && <span style={{ marginLeft: 8, fontSize: 12, color: 'var(--text-faint)', fontWeight: 400 }}>
                     tap weight to apply to all ↓
                   </span>}
                 </div>
-                <div style={{ display: 'flex', border: '1px solid #2a2a2a', borderRadius: 8, overflow: 'hidden' }}>
+                <div style={{ display: 'flex', border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
                   {['kg','lbs'].map(u => (
                     <button key={u} onClick={() => { setUnit(u); setSets(prev => prev.map(s => ({ ...s, unit: u }))); }} style={{
                       padding: '6px 14px', background: unit === u ? '#7c3aed' : 'transparent', border: 'none',
-                      color: unit === u ? '#fff' : '#555', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                      color: unit === u ? '#fff' : 'var(--text-faint)', fontSize: 12, fontWeight: 700, cursor: 'pointer',
                     }}>{u}</button>
                   ))}
                 </div>
@@ -223,13 +223,13 @@ function LogSheet({ open, onClose, ex, day, existingLog, t, onSaved }) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {sets.map((s, i) => (
                   <div key={i} style={{
-                    background: s.completed ? '#1a1a1a' : '#1a0a0a',
-                    border: `1px solid ${s.completed ? '#2a2a2a' : '#ef444433'}`,
+                    background: s.completed ? 'var(--glass-2)' : '#1a0a0a',
+                    border: `1px solid ${s.completed ? 'var(--border)' : '#ef444433'}`,
                     borderRadius: 14, padding: '14px', transition: 'all 0.15s',
                   }}>
                     {/* Set header */}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                      <span style={{ fontSize: 12, fontWeight: 800, color: '#555', textTransform: 'uppercase', letterSpacing: 1 }}>Set {i + 1}</span>
+                      <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: 1 }}>Set {i + 1}</span>
                       <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                         <button onClick={() => updateSet(i, 'completed', !s.completed)} style={{
                           padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: 'none',
@@ -239,7 +239,7 @@ function LogSheet({ open, onClose, ex, day, existingLog, t, onSaved }) {
                           {s.completed ? '✓ Done' : '✗ Failed'}
                         </button>
                         {sets.length > 1 && (
-                          <button onClick={() => removeSet(i)} style={{ background: 'none', border: 'none', color: '#333', cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: '0 2px' }}>×</button>
+                          <button onClick={() => removeSet(i)} style={{ background: 'none', border: 'none', color: 'var(--border-hi)', cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: '0 2px' }}>×</button>
                         )}
                       </div>
                     </div>
@@ -248,8 +248,8 @@ function LogSheet({ open, onClose, ex, day, existingLog, t, onSaved }) {
                     <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
                       {/* Reps */}
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: '#444', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 6 }}>Reps</div>
-                        <div style={{ display: 'flex', border: '1px solid #2a2a2a', borderRadius: 10, overflow: 'hidden', background: '#111' }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 6 }}>Reps</div>
+                        <div style={{ display: 'flex', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden', background: 'var(--glass-1)' }}>
                           <button onClick={() => updateSet(i, 'reps', Math.max(0, (parseInt(s.reps) || 0) - 1))} style={adjBtn}>−</button>
                           <input type="number" inputMode="numeric" value={s.reps} onChange={e => updateSet(i, 'reps', e.target.value)}
                             style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: '#fff', fontSize: 20, fontWeight: 700, textAlign: 'center', width: 0 }} />
@@ -259,8 +259,8 @@ function LogSheet({ open, onClose, ex, day, existingLog, t, onSaved }) {
 
                       {/* Weight */}
                       <div style={{ flex: 2 }}>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: '#444', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 6 }}>Weight ({unit})</div>
-                        <div style={{ display: 'flex', border: '1px solid #2a2a2a', borderRadius: 10, overflow: 'hidden', background: '#111', alignItems: 'stretch' }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 6 }}>Weight ({unit})</div>
+                        <div style={{ display: 'flex', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden', background: 'var(--glass-1)', alignItems: 'stretch' }}>
                           <button onClick={() => adjustWeight(i, -2.5)} style={{ ...adjBtn, padding: '0 12px', fontSize: 12, fontWeight: 700 }}>−2.5</button>
                           <input
                             type="number" inputMode="decimal" value={s.weight}
@@ -278,8 +278,8 @@ function LogSheet({ open, onClose, ex, day, existingLog, t, onSaved }) {
 
                 {/* Add set */}
                 <button onClick={addSet} style={{
-                  padding: '11px', background: 'transparent', border: '1px dashed #2a2a2a',
-                  borderRadius: 12, color: '#444', fontSize: 13, cursor: 'pointer',
+                  padding: '11px', background: 'transparent', border: '1px dashed var(--border)',
+                  borderRadius: 12, color: 'var(--text-faint)', fontSize: 13, cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                 }}>
                   + Add set
@@ -290,11 +290,11 @@ function LogSheet({ open, onClose, ex, day, existingLog, t, onSaved }) {
 
           {/* Notes */}
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#444', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 8 }}>Notes</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 8 }}>Notes</div>
             <textarea value={notes} onChange={e => setNotes(e.target.value)}
               placeholder="Form tips, how it felt, next goal…"
               rows={2}
-              style={{ width: '100%', background: '#111', border: '1px solid #2a2a2a', borderRadius: 10, padding: '12px 14px', color: '#e0e0e0', fontSize: 14, resize: 'none', outline: 'none', fontFamily: 'inherit', lineHeight: 1.5 }}
+              style={{ width: '100%', background: 'var(--glass-1)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 14px', color: '#e0e0e0', fontSize: 14, resize: 'none', outline: 'none', fontFamily: 'inherit', lineHeight: 1.5 }}
             />
           </div>
 
@@ -318,7 +318,7 @@ function LogSheet({ open, onClose, ex, day, existingLog, t, onSaved }) {
   );
 }
 
-const adjBtn = { background: 'transparent', border: 'none', color: '#555', cursor: 'pointer', padding: '0 14px', fontSize: 20, lineHeight: 1, minHeight: 48, display: 'flex', alignItems: 'center', justifyContent: 'center' };
+const adjBtn = { background: 'transparent', border: 'none', color: 'var(--text-faint)', cursor: 'pointer', padding: '0 14px', fontSize: 20, lineHeight: 1, minHeight: 48, display: 'flex', alignItems: 'center', justifyContent: 'center' };
 
 // ─── LogSummary chip ──────────────────────────────────────────────────────────
 
@@ -345,12 +345,12 @@ function LogSummary({ log, accent }) {
         ✓ {done}/{sets.length} sets
       </span>
       {weights.length > 0 && (
-        <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: '#1e1e1e', color: '#888', border: '1px solid #2a2a2a' }}>
+        <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: 'var(--border)', color: 'var(--text-dim)', border: '1px solid var(--border)' }}>
           🏋 {weights.join(' / ')} {unit}
         </span>
       )}
       {timeStr && (
-        <span style={{ fontSize: 11, color: '#444' }}>⏱ {timeStr}</span>
+        <span style={{ fontSize: 11, color: 'var(--text-faint)' }}>⏱ {timeStr}</span>
       )}
     </div>
   );
@@ -383,30 +383,30 @@ function LinkEditorSheet({ day, exercise, current, open, onSaved, onClose }) {
     setTimeout(() => { setFlash(false); onClose(); }, 700);
   }
 
-  const inp = { width: '100%', background: '#111', border: '1px solid #2a2a2a', borderRadius: 10, padding: '12px 14px', color: '#e0e0e0', fontSize: 14, outline: 'none', fontFamily: 'monospace' };
+  const inp = { width: '100%', background: 'var(--glass-1)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 14px', color: '#e0e0e0', fontSize: 14, outline: 'none', fontFamily: 'monospace' };
 
   return (
     <BottomSheet open={open} onClose={onClose} title={`Edit links · ${exercise?.name ?? ''}`}>
       <div style={{ padding: '8px 20px 28px', display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div>
-          <div style={{ fontSize: 11, color: '#555', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5 }}>
+          <div style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5 }}>
             <span style={{ color: '#ef4444' }}>▶</span> Full Tutorial URL
           </div>
           <input value={yt} onChange={e => setYt(e.target.value)} placeholder="https://youtube.com/watch?v=..." style={inp}
-            onFocus={e => e.target.style.borderColor='#7c3aed'} onBlur={e => e.target.style.borderColor='#2a2a2a'} />
+            onFocus={e => e.target.style.borderColor='#7c3aed'} onBlur={e => e.target.style.borderColor='var(--border)'} />
         </div>
         <div>
-          <div style={{ fontSize: 11, color: '#555', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5 }}>
-            <span style={{ color: '#aaa' }}>⚡</span> Short / Reel URL
+          <div style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5 }}>
+            <span style={{ color: 'var(--text-dim)' }}>⚡</span> Short / Reel URL
           </div>
           <input value={short} onChange={e => setShort(e.target.value)} placeholder="https://youtube.com/shorts/..." style={inp}
-            onFocus={e => e.target.style.borderColor='#7c3aed'} onBlur={e => e.target.style.borderColor='#2a2a2a'} />
+            onFocus={e => e.target.style.borderColor='#7c3aed'} onBlur={e => e.target.style.borderColor='var(--border)'} />
         </div>
         {short && (
           <div>
-            <div style={{ fontSize: 11, color: '#555', marginBottom: 8, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5 }}>Short description</div>
+            <div style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 8, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5 }}>Short description</div>
             <input value={shortNote} onChange={e => setShortNote(e.target.value)} placeholder="e.g. Dumbbell version, under 60s" style={inp}
-              onFocus={e => e.target.style.borderColor='#7c3aed'} onBlur={e => e.target.style.borderColor='#2a2a2a'} />
+              onFocus={e => e.target.style.borderColor='#7c3aed'} onBlur={e => e.target.style.borderColor='var(--border)'} />
           </div>
         )}
         <button onClick={save} disabled={saving} style={{ padding: '14px', background: flash ? '#16a34a' : '#7c3aed', border: 'none', borderRadius: 12, color: '#fff', fontSize: 15, fontWeight: 700, cursor: saving ? 'default' : 'pointer', transition: 'background 0.2s' }}>
@@ -435,8 +435,8 @@ function ExerciseCard({ ex, index, t, day, customLinks, onLinksUpdate, done, onT
   return (
     <div style={{
       borderRadius: 14,
-      border: `1px solid ${logOpen ? t.accent + '66' : open ? t.accent + '44' : done ? t.accent + '33' : '#1e1e1e'}`,
-      background: done ? t.dim : open ? '#1a1a1a' : '#131313',
+      border: `1px solid ${logOpen ? t.accent + '66' : open ? t.accent + '44' : done ? t.accent + '33' : 'var(--border)'}`,
+      background: done ? t.dim : open ? 'var(--glass-2)' : 'var(--glass-1)',
       transition: 'all 0.2s',
       overflow: 'visible',
     }}>
@@ -450,7 +450,7 @@ function ExerciseCard({ ex, index, t, day, customLinks, onLinksUpdate, done, onT
         }}>
           <div style={{
             width: 22, height: 22, borderRadius: 7,
-            border: `2px solid ${done ? t.accent : '#2a2a2a'}`,
+            border: `2px solid ${done ? t.accent : 'var(--border)'}`,
             background: done ? t.accent : 'transparent',
             display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s',
           }}>
@@ -472,7 +472,7 @@ function ExerciseCard({ ex, index, t, day, customLinks, onLinksUpdate, done, onT
             </div>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5, paddingLeft: 32 }}>
-              <span style={{ fontSize: 12, color: '#555' }}>{ex.sets} sets · {ex.reps} reps</span>
+              <span style={{ fontSize: 12, color: 'var(--text-faint)' }}>{ex.sets} sets · {ex.reps} reps</span>
               <span style={{ fontSize: 11, fontWeight: 600, padding: '1px 8px', borderRadius: 10, background: t.dim, color: t.accent }}>{ex.muscle}</span>
             </div>
           )}
@@ -483,22 +483,22 @@ function ExerciseCard({ ex, index, t, day, customLinks, onLinksUpdate, done, onT
           <button onClick={() => setLogOpen(true)} title="Log workout" style={{
             width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center',
             background: isLogged ? t.dim : 'transparent',
-            border: `1px solid ${isLogged ? t.accent + '55' : '#2a2a2a'}`,
-            borderRadius: 8, color: isLogged ? t.accent : '#444',
+            border: `1px solid ${isLogged ? t.accent + '55' : 'var(--border)'}`,
+            borderRadius: 8, color: isLogged ? t.accent : 'var(--text-faint)',
             cursor: 'pointer', fontSize: 14, transition: 'all 0.15s',
           }}>
             {isLogged ? '📊' : '📋'}
           </button>
 
           {/* Expand */}
-          <div style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#333', fontSize: 10, transition: 'transform 0.2s', transform: open ? 'rotate(180deg)' : 'none', pointerEvents: 'none' }}>▼</div>
+          <div style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--border-hi)', fontSize: 10, transition: 'transform 0.2s', transform: open ? 'rotate(180deg)' : 'none', pointerEvents: 'none' }}>▼</div>
         </div>
       </div>
 
       {/* Expanded detail */}
       {open && (
         <div style={{ padding: '0 16px 16px 16px', borderTop: `1px solid ${t.accent}22` }}>
-          <p style={{ fontSize: 13, color: '#aaa', lineHeight: 1.7, marginTop: 14, marginBottom: 0 }}>{ex.desc}</p>
+          <p style={{ fontSize: 13, color: 'var(--text-dim)', lineHeight: 1.7, marginTop: 14, marginBottom: 0 }}>{ex.desc}</p>
           <div style={{ marginTop: 12, padding: '10px 14px', background: t.dim, borderLeft: `3px solid ${t.accent}`, borderRadius: '0 8px 8px 0', fontSize: 13, color: t.accent, fontWeight: 500 }}>
             🎯 You should feel: {ex.feel}
           </div>
@@ -510,17 +510,17 @@ function ExerciseCard({ ex, index, t, day, customLinks, onLinksUpdate, done, onT
                 <div><div>Full Tutorial</div><div style={{ fontSize: 10, color: '#ff444466', fontWeight: 400, marginTop: 1 }}>In-depth technique</div></div>
               </a>
             ) : (
-              <div style={{ flex: 1, padding: '12px 14px', background: '#111', border: '1px dashed #1e1e1e', borderRadius: 10, color: '#333', fontSize: 12, display: 'flex', alignItems: 'center' }}>No tutorial link</div>
+              <div style={{ flex: 1, padding: '12px 14px', background: 'var(--glass-1)', border: '1px dashed var(--border)', borderRadius: 10, color: 'var(--border-hi)', fontSize: 12, display: 'flex', alignItems: 'center' }}>No tutorial link</div>
             )}
             {short ? (
-              <a href={short} target="_blank" rel="noopener noreferrer" style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: '#111', border: '1px solid #2a2a2a', borderRadius: 10, textDecoration: 'none', color: '#ccc', fontSize: 13, fontWeight: 600 }}>
+              <a href={short} target="_blank" rel="noopener noreferrer" style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: 'var(--glass-1)', border: '1px solid var(--border)', borderRadius: 10, textDecoration: 'none', color: 'var(--text-dim)', fontSize: 13, fontWeight: 600 }}>
                 <span style={{ fontSize: 20 }}>⚡</span>
-                <div><div>Quick Short</div><div style={{ fontSize: 10, color: '#555', fontWeight: 400, marginTop: 1 }}>{shortNote || '30 sec recap'}</div></div>
+                <div><div>Quick Short</div><div style={{ fontSize: 10, color: 'var(--text-faint)', fontWeight: 400, marginTop: 1 }}>{shortNote || '30 sec recap'}</div></div>
               </a>
             ) : (
-              <div style={{ flex: 1, padding: '12px 14px', background: '#111', border: '1px dashed #1e1e1e', borderRadius: 10, color: '#333', fontSize: 12, display: 'flex', alignItems: 'center' }}>No short yet</div>
+              <div style={{ flex: 1, padding: '12px 14px', background: 'var(--glass-1)', border: '1px dashed var(--border)', borderRadius: 10, color: 'var(--border-hi)', fontSize: 12, display: 'flex', alignItems: 'center' }}>No short yet</div>
             )}
-            <button onClick={() => setEditOpen(true)} title="Edit video links" style={{ width: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', background: isCustom ? t.dim : '#111', border: `1px solid ${isCustom ? t.accent + '44' : '#2a2a2a'}`, borderRadius: 10, color: isCustom ? t.accent : '#444', cursor: 'pointer', fontSize: 17, position: 'relative', flexShrink: 0 }}>
+            <button onClick={() => setEditOpen(true)} title="Edit video links" style={{ width: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', background: isCustom ? t.dim : 'var(--glass-1)', border: `1px solid ${isCustom ? t.accent + '44' : 'var(--border)'}`, borderRadius: 10, color: isCustom ? t.accent : 'var(--text-faint)', cursor: 'pointer', fontSize: 17, position: 'relative', flexShrink: 0 }}>
               ✎
               {isCustom && <span style={{ position: 'absolute', top: 7, right: 7, width: 5, height: 5, borderRadius: '50%', background: t.accent }} />}
             </button>
@@ -587,10 +587,10 @@ export default function GymPlan() {
   const progress       = current.exercises.length > 0 ? completedCount / current.exercises.length : 0;
 
   return (
-    <div style={{ background: '#0d0d0d', color: '#e8e8e8' }}>
+    <div style={{ background: 'transparent', color: 'var(--text)' }}>
 
       {/* Day selector */}
-      <div className="gym-day-strip" style={{ display: 'flex', overflowX: 'auto', gap: 6, padding: '14px 12px', background: '#111', borderBottom: '1px solid #1e1e1e', scrollbarWidth: 'none' }}>
+      <div className="gym-day-strip" style={{ display: 'flex', overflowX: 'auto', gap: 6, padding: '14px 12px', background: 'var(--glass-1)', borderBottom: '1px solid var(--border)', scrollbarWidth: 'none' }}>
         {days.map((d, i) => {
           const dt = themes[d.theme];
           const isActive = i === activeDay;
@@ -604,7 +604,7 @@ export default function GymPlan() {
               cursor: 'pointer', transition: 'all 0.2s',
             }}>
               <span style={{ fontSize: 18 }}>{d.icon}</span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: isActive ? dt.accent : '#444', letterSpacing: 0.5 }}>{d.day}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: isActive ? dt.accent : 'var(--text-faint)', letterSpacing: 0.5 }}>{d.day}</span>
               {isTdy && <span style={{ position: 'absolute', top: 6, right: 6, width: 5, height: 5, borderRadius: '50%', background: dt.accent }} />}
             </button>
           );
@@ -612,7 +612,7 @@ export default function GymPlan() {
       </div>
 
       {/* Day header */}
-      <div style={{ background: `linear-gradient(160deg, ${t.bg} 0%, #0d0d0d 70%)`, borderBottom: `1px solid ${t.accent}22`, padding: '20px 16px 16px' }}>
+      <div style={{ background: `linear-gradient(160deg, ${t.bg} 0%, transparent 70%)`, borderBottom: `1px solid ${t.accent}22`, padding: '20px 16px 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ width: 52, height: 52, borderRadius: 14, background: t.dim, border: `1px solid ${t.accent}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, flexShrink: 0 }}>{current.icon}</div>
           <div style={{ flex: 1 }}>
@@ -622,7 +622,7 @@ export default function GymPlan() {
           {current.exercises.length > 0 && (
             <div style={{ textAlign: 'right', flexShrink: 0 }}>
               <div style={{ fontSize: 22, fontWeight: 800, color: t.accent }}>{completedCount}/{current.exercises.length}</div>
-              <div style={{ fontSize: 10, color: '#555', marginTop: 1 }}>
+              <div style={{ fontSize: 10, color: 'var(--text-faint)', marginTop: 1 }}>
                 {loggedCount > 0 ? `${loggedCount} logged` : 'exercises'}
               </div>
             </div>
@@ -631,17 +631,17 @@ export default function GymPlan() {
 
         {current.exercises.length > 0 && (
           <div style={{ marginTop: 16 }}>
-            <div style={{ height: 5, background: '#1e1e1e', borderRadius: 4, overflow: 'hidden' }}>
+            <div style={{ height: 5, background: 'var(--border)', borderRadius: 4, overflow: 'hidden' }}>
               <div style={{ height: '100%', width: `${progress * 100}%`, background: t.accent, borderRadius: 4, transition: 'width 0.4s ease' }} />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-              <span style={{ fontSize: 11, color: '#444' }}>{completedCount} done · {loggedCount} logged</span>
-              <span style={{ fontSize: 11, color: '#444' }}>{Math.round(progress * 100)}%</span>
+              <span style={{ fontSize: 11, color: 'var(--text-faint)' }}>{completedCount} done · {loggedCount} logged</span>
+              <span style={{ fontSize: 11, color: 'var(--text-faint)' }}>{Math.round(progress * 100)}%</span>
             </div>
           </div>
         )}
 
-        <div style={{ marginTop: 14, padding: '10px 14px', background: `${t.accent}12`, border: `1px solid ${t.accent}25`, borderRadius: 10, fontSize: 13, color: '#999', lineHeight: 1.6 }}>
+        <div style={{ marginTop: 14, padding: '10px 14px', background: `${t.accent}12`, border: `1px solid ${t.accent}25`, borderRadius: 10, fontSize: 13, color: 'var(--text-dim)', lineHeight: 1.6 }}>
           💡 {current.tip}
         </div>
       </div>
@@ -651,8 +651,8 @@ export default function GymPlan() {
         {current.exercises.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 20px' }}>
             <div style={{ fontSize: 56, marginBottom: 16 }}>🛌</div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: '#555' }}>Rest & Recover</div>
-            <div style={{ marginTop: 8, fontSize: 14, color: '#333', lineHeight: 1.8 }}>Your muscles grow on rest days.<br />Sleep 7–9 hrs. Stay hydrated.</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-faint)' }}>Rest & Recover</div>
+            <div style={{ marginTop: 8, fontSize: 14, color: 'var(--border-hi)', lineHeight: 1.8 }}>Your muscles grow on rest days.<br />Sleep 7–9 hrs. Stay hydrated.</div>
           </div>
         ) : (
           current.exercises.map((ex, i) => (
@@ -676,7 +676,7 @@ export default function GymPlan() {
           <div style={{ marginTop: 8, padding: '20px', borderRadius: 14, background: `${t.accent}18`, border: `1px solid ${t.accent}44`, textAlign: 'center' }}>
             <div style={{ fontSize: 32, marginBottom: 8 }}>🎉</div>
             <div style={{ fontSize: 16, fontWeight: 800, color: t.accent }}>Workout complete!</div>
-            <div style={{ fontSize: 13, color: '#666', marginTop: 4 }}>
+            <div style={{ fontSize: 13, color: 'var(--text-faint)', marginTop: 4 }}>
               {loggedCount === current.exercises.length
                 ? `All ${loggedCount} exercises logged. Great work!`
                 : `${loggedCount}/${current.exercises.length} exercises logged. Don't forget to log!`}
@@ -686,15 +686,15 @@ export default function GymPlan() {
       </div>
 
       {/* Weekly overview */}
-      <div style={{ margin: '0 12px 32px', background: '#111', border: '1px solid #1e1e1e', borderRadius: 14, padding: '16px' }}>
-        <div style={{ fontSize: 10, color: '#444', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 12, fontWeight: 700 }}>This Week</div>
+      <div style={{ margin: '0 12px 32px', background: 'var(--glass-1)', border: '1px solid var(--border)', borderRadius: 14, padding: '16px' }}>
+        <div style={{ fontSize: 10, color: 'var(--text-faint)', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 12, fontWeight: 700 }}>This Week</div>
         <div style={{ display: 'flex', gap: 6 }}>
           {days.map((d, i) => {
             const dt = themes[d.theme]; const isActive = i === activeDay;
             return (
-              <div key={d.day} onClick={() => setActiveDay(i)} style={{ flex: 1, textAlign: 'center', padding: '10px 4px', borderRadius: 10, background: isActive ? `${dt.accent}22` : '#161616', border: `1px solid ${isActive ? dt.accent + '55' : '#1e1e1e'}`, cursor: 'pointer', transition: 'all 0.15s' }}>
+              <div key={d.day} onClick={() => setActiveDay(i)} style={{ flex: 1, textAlign: 'center', padding: '10px 4px', borderRadius: 10, background: isActive ? `${dt.accent}22` : 'var(--glass-2)', border: `1px solid ${isActive ? dt.accent + '55' : 'var(--border)'}`, cursor: 'pointer', transition: 'all 0.15s' }}>
                 <div style={{ fontSize: 16 }}>{d.icon}</div>
-                <div style={{ fontSize: 9, color: isActive ? dt.accent : '#333', marginTop: 4, fontWeight: 700, letterSpacing: 0.5 }}>{d.day}</div>
+                <div style={{ fontSize: 9, color: isActive ? dt.accent : 'var(--border-hi)', marginTop: 4, fontWeight: 700, letterSpacing: 0.5 }}>{d.day}</div>
               </div>
             );
           })}

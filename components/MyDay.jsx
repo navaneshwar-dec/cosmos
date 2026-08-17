@@ -131,8 +131,8 @@ export default function MyDay() {
         {data && total === 0 && (
           <div style={{ textAlign: 'center', padding: '54px 20px' }}>
             <div style={{ fontSize: 44, marginBottom: 12 }}>🌤️</div>
-            <div style={{ fontSize: 16, color: '#444', fontWeight: 600 }}>Nothing scheduled</div>
-            <div style={{ fontSize: 13, color: '#2e2e2e', marginTop: 6 }}>Add a routine, or a to-do / work item with today's date</div>
+            <div style={{ fontSize: 16, color: 'var(--text-faint)', fontWeight: 600 }}>Nothing scheduled</div>
+            <div style={{ fontSize: 13, color: 'var(--border)', marginTop: 6 }}>Add a routine, or a to-do / work item with today's date</div>
           </div>
         )}
 
@@ -149,7 +149,7 @@ export default function MyDay() {
                 const color = item.p1 ? '#f87171' : TYPE[item.type].color;
                 return (
                   <div key={item.key} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '12px 13px', marginBottom: 7, background: item.p1 ? 'rgba(239,68,68,0.10)' : 'var(--glass-1)', border: `1px solid ${item.p1 ? 'rgba(239,68,68,0.26)' : 'var(--border)'}`, borderRadius: 14, opacity: item.done ? 0.5 : 1 }}>
-                    <button onClick={() => toggle(item)} aria-label={`${item.done ? 'Mark not done' : 'Mark done'}: ${item.title}`} style={{ width: 24, height: 24, borderRadius: 8, flexShrink: 0, border: `2px solid ${item.done ? color : 'rgba(255,255,255,0.22)'}`, background: item.done ? color : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0a0a10', fontSize: 12, fontWeight: 800, boxShadow: item.done ? `0 0 10px ${color}55` : 'none' }}>{item.done && '✓'}</button>
+                    <button onClick={() => toggle(item)} aria-label={`${item.done ? 'Mark not done' : 'Mark done'}: ${item.title}`} style={{ width: 24, height: 24, borderRadius: 8, flexShrink: 0, border: `2px solid ${item.done ? color : 'rgba(255,255,255,0.22)'}`, background: item.done ? color : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'transparent', fontSize: 12, fontWeight: 800, boxShadow: item.done ? `0 0 10px ${color}55` : 'none' }}>{item.done && '✓'}</button>
                     <span style={{ fontSize: 11, color: item.overdue ? '#f87171' : 'var(--text-faint)', width: 60, flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>{item.overdue ? '⚠ over' : fmtMin(item.min) ?? ''}</span>
                     <span style={{ width: 7, height: 7, borderRadius: '50%', background: color, flexShrink: 0, boxShadow: `0 0 8px ${color}88` }} />
                     <span style={{ flex: 1, minWidth: 0, fontSize: 14, color: item.done ? 'var(--text-faint)' : 'var(--text)', textDecoration: item.done ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</span>

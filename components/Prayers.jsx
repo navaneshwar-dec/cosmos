@@ -504,9 +504,130 @@ const PRAYERS = [
 రామతులసి , లక్ష్మీ తులసి !
 నిత్యం మాయింట కొలువై విలసిల్లవమ్మా`,
   },
+
+  {
+    id: 32,
+    name: 'పూజ్యాయ రాఘవేంద్రాయ',
+    sub: 'శ్రీ రాఘవేంద్ర స్తోత్రం',
+    category: 'గురు',
+    color: '#14b8a6',
+    icon: '🙏',
+    text:
+`పూజ్యాయ రాఘవేంద్రాయ సత్యధర్మ రతాయ చ |
+భజతాం కల్పవృక్షాయ నమతాం కామధేనవే ||`,
+  },
+
+  {
+    id: 33,
+    name: 'సర్వ మంగళ మాంగల్యే',
+    sub: 'దుర్గా స్తుతి',
+    category: 'దేవి',
+    color: '#ec4899',
+    icon: '🌺',
+    text:
+`సర్వ మంగళ మాంగల్యే శివే సర్వార్థ సాధికే |
+శరణ్యే త్ర్యంబకే గౌరి నారాయణి నమోఽస్తుతే ||`,
+  },
+
+  {
+    id: 34,
+    name: 'మంగళ చండికా మంత్రం',
+    sub: 'దేవి చండికా మంత్రం',
+    category: 'దేవి',
+    color: '#ec4899',
+    icon: '🔱',
+    text:
+`ఓం హ్రీం శ్రీం క్లీం సర్వపూజ్యే
+దేవి మంగళ చండికే |
+ఓం హుం ఫట్ స్వాహా ||`,
+  },
+
+  {
+    id: 35,
+    name: 'శ్రీ రామ జయ రామ',
+    sub: 'రామ తారక మంత్రం — త్రయోదశాక్షరి',
+    category: 'రామ',
+    color: '#22c55e',
+    icon: '🏹',
+    text:
+`శ్రీ రామ జయ రామ జయ జయ రామ ||`,
+  },
+
+  {
+    id: 36,
+    name: 'ఆపదామపహర్తారం',
+    sub: 'శ్రీరామ రక్షా శ్లోకం',
+    category: 'రామ',
+    color: '#22c55e',
+    icon: '🏹',
+    text:
+`ఆపదామపహర్తారం దాతారం సర్వసంపదాం |
+లోకాభిరామం శ్రీరామం భూయో భూయో నమామ్యహం ||`,
+  },
+
+  {
+    id: 37,
+    name: 'జపాకుసుమ సంకాశం',
+    sub: 'సూర్య ధ్యాన శ్లోకం',
+    category: 'సూర్య',
+    color: '#f59e0b',
+    icon: '☀️',
+    text:
+`జపాకుసుమ సంకాశం కాశ్యపేయం మహాద్యుతిం |
+తమోఽరిం సర్వపాపఘ్నం ప్రణతోఽస్మి దివాకరం ||`,
+  },
+
+  {
+    id: 38,
+    name: 'ఆదిదేవ నమస్తుభ్యం',
+    sub: 'సూర్య ప్రార్థన',
+    category: 'సూర్య',
+    color: '#f59e0b',
+    icon: '☀️',
+    text:
+`ఆదిదేవ నమస్తుభ్యం ప్రసీద మమ భాస్కర |
+దివాకర నమస్తుభ్యం ప్రభాకర నమోఽస్తుతే ||`,
+  },
+
+  {
+    id: 39,
+    name: 'యన్మూలే సర్వతీర్థాని',
+    sub: 'తులసీ నమస్కార శ్లోకం',
+    category: 'సార్వత్రిక',
+    color: '#f59e0b',
+    icon: '🌿',
+    text:
+`యన్మూలే సర్వతీర్థాని యన్మధ్యే సర్వదేవతాః |
+యదగ్రే సర్వవేదాశ్చ తులసీం తాం నమామ్యహం ||`,
+  },
+
+  {
+    id: 40,
+    name: 'కార్తవీర్యార్జునో నామ',
+    sub: 'పోగొట్టుకున్నవి తిరిగి పొందు శ్లోకం',
+    category: 'సార్వత్రిక',
+    color: '#f59e0b',
+    icon: '✨',
+    text:
+`కార్తవీర్యార్జునో నామ రాజా బాహుసహస్రవాన్ |
+తస్య స్మరణమాత్రేణ గతం నష్టం చ లభ్యతే ||`,
+  },
+
+  {
+    id: 41,
+    name: 'ఓం శాంతి మంత్రం',
+    sub: 'సర్వే భవంతు సుఖినః',
+    category: 'సార్వత్రిక',
+    color: '#f59e0b',
+    icon: '🕉️',
+    text:
+`సర్వే భవంతు సుఖినః సర్వే సంతు నిరామయాః |
+సర్వే భద్రాణి పశ్యంతు మా కశ్చిద్దుఃఖభాగ్భవేత్ |
+ఓం శాంతిః శాంతిః శాంతిః ||`,
+  },
 ];
 
-const CATEGORIES = ['అన్నీ', 'గణేశ', 'విష్ణు', 'దేవి', 'శివ', 'రామ', 'సాయి', 'సార్వత్రిక'];
+const CATEGORIES = ['అన్నీ', 'గణేశ', 'విష్ణు', 'దేవి', 'శివ', 'రామ', 'సాయి', 'సూర్య', 'గురు', 'సార్వత్రిక'];
 
 // ─── Prayer card ───────────────────────────────────────────────────────────────
 
@@ -516,8 +637,8 @@ function PrayerCard({ prayer, fontSize, index }) {
   return (
     <div style={{
       borderRadius: 16,
-      border: `1px solid ${open ? prayer.color + '55' : '#1e1e1e'}`,
-      background: open ? '#161616' : '#111',
+      border: `1px solid ${open ? prayer.color + '55' : 'var(--border)'}`,
+      background: open ? 'var(--glass-2)' : 'var(--glass-1)',
       overflow: 'hidden',
       transition: 'all 0.2s',
     }}>
@@ -543,14 +664,14 @@ function PrayerCard({ prayer, fontSize, index }) {
         {/* Text */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 16, fontWeight: 700, color: '#f0f0f0', lineHeight: 1.3 }}>{prayer.name}</div>
-          <div style={{ fontSize: 12, color: '#555', marginTop: 3 }}>{prayer.sub}</div>
+          <div style={{ fontSize: 12, color: 'var(--text-faint)', marginTop: 3 }}>{prayer.sub}</div>
         </div>
 
         {/* Expand arrow */}
         <div style={{
-          width: 28, height: 28, borderRadius: 8, background: open ? `${prayer.color}22` : '#1a1a1a',
+          width: 28, height: 28, borderRadius: 8, background: open ? `${prayer.color}22` : 'var(--glass-2)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: open ? prayer.color : '#333', fontSize: 11,
+          color: open ? prayer.color : 'var(--border-hi)', fontSize: 11,
           transition: 'all 0.2s', transform: open ? 'rotate(180deg)' : 'none', flexShrink: 0,
         }}>▼</div>
       </button>
@@ -575,7 +696,7 @@ function PrayerCard({ prayer, fontSize, index }) {
             fontFamily: '"Noto Serif Telugu", "Mandali", "Gautami", serif',
             fontSize: fontSize,
             lineHeight: 1.9,
-            color: '#e8e8e8',
+            color: 'var(--text)',
             whiteSpace: 'pre-wrap',
             wordBreak: 'break-word',
             margin: 0,
@@ -601,7 +722,7 @@ export default function Prayers() {
     : PRAYERS.filter(p => p.category === activeCategory);
 
   return (
-    <div style={{ background: '#0d0d0d', minHeight: '100%' }}>
+    <div style={{ background: 'transparent', minHeight: '100%' }}>
 
       {/* Controls bar */}
       <div style={{
@@ -609,27 +730,27 @@ export default function Prayers() {
         background: 'rgba(13,13,13,0.92)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
-        borderBottom: '1px solid #1e1e1e',
+        borderBottom: '1px solid var(--border)',
         padding: '10px 14px',
         display: 'flex', alignItems: 'center', gap: 10,
       }}>
         {/* Font size */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 0, border: '1px solid #2a2a2a', borderRadius: 10, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 0, border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
           <button
             onClick={() => setFontSize(s => Math.max(14, s - 2))}
-            style={{ padding: '7px 13px', background: 'transparent', border: 'none', color: '#555', cursor: 'pointer', fontSize: 14 }}
+            style={{ padding: '7px 13px', background: 'transparent', border: 'none', color: 'var(--text-faint)', cursor: 'pointer', fontSize: 14 }}
           >A−</button>
-          <span style={{ padding: '7px 4px', fontSize: 11, color: '#444', fontWeight: 600 }}>{fontSize}</span>
+          <span style={{ padding: '7px 4px', fontSize: 11, color: 'var(--text-faint)', fontWeight: 600 }}>{fontSize}</span>
           <button
             onClick={() => setFontSize(s => Math.min(26, s + 2))}
-            style={{ padding: '7px 13px', background: 'transparent', border: 'none', color: '#555', cursor: 'pointer', fontSize: 16 }}
+            style={{ padding: '7px 13px', background: 'transparent', border: 'none', color: 'var(--text-faint)', cursor: 'pointer', fontSize: 16 }}
           >A+</button>
         </div>
 
         <div style={{ flex: 1 }} />
 
         {/* Prayer count */}
-        <span style={{ fontSize: 11, color: '#333', fontWeight: 600 }}>{filtered.length} స్తోత్రాలు</span>
+        <span style={{ fontSize: 11, color: 'var(--border-hi)', fontWeight: 600 }}>{filtered.length} స్తోత్రాలు</span>
       </div>
 
       {/* Category chips */}
@@ -637,7 +758,7 @@ export default function Prayers() {
         display: 'flex', gap: 7, padding: '12px 14px',
         overflowX: 'auto', scrollbarWidth: 'none',
         WebkitOverflowScrolling: 'touch',
-        borderBottom: '1px solid #1a1a1a',
+        borderBottom: '1px solid var(--glass-2)',
       }}>
         {CATEGORIES.map(cat => {
           const isActive = cat === activeCategory;
@@ -650,9 +771,9 @@ export default function Prayers() {
               onClick={() => setCategory(cat)}
               style={{
                 flexShrink: 0, padding: '6px 14px', borderRadius: 20,
-                border: isActive ? `1.5px solid ${accent}` : '1.5px solid #2a2a2a',
+                border: isActive ? `1.5px solid ${accent}` : '1.5px solid var(--border)',
                 background: isActive ? `${accent}18` : 'transparent',
-                color: isActive ? accent : '#444',
+                color: isActive ? accent : 'var(--text-faint)',
                 fontSize: 12, fontWeight: isActive ? 700 : 500, cursor: 'pointer',
                 transition: 'all 0.15s',
               }}

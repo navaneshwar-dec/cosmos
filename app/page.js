@@ -10,13 +10,12 @@ const MyDay     = dynamic(() => import('../components/MyDay'),     { ssr: false 
 const Todo      = dynamic(() => import('../components/Todo'),      { ssr: false });
 const Work      = dynamic(() => import('../components/Work'),      { ssr: false });
 const Finances  = dynamic(() => import('../components/Finances'),  { ssr: false });
-const GymPlan   = dynamic(() => import('../components/GymPlan'),   { ssr: false });
+const Health    = dynamic(() => import('../components/Health'),    { ssr: false });
 const Prayers   = dynamic(() => import('../components/Prayers'),   { ssr: false });
 const Assistant = dynamic(() => import('../components/Assistant'), { ssr: false });
 const Vault     = dynamic(() => import('../components/Vault'),     { ssr: false });
 const Diary     = dynamic(() => import('../components/Diary'),     { ssr: false });
 const Files     = dynamic(() => import('../components/Files'),     { ssr: false });
-const Medical   = dynamic(() => import('../components/Medical'),   { ssr: false });
 
 // Finance (local SQLite) and the AI Assistant (local Ollama/Open WebUI) only work on
 // the Mac. This flag is set in .env.local but NOT on Vercel, so those tabs vanish in prod.
@@ -350,7 +349,6 @@ export default function Home() {
   const [vaultOpen, setVault]   = useState(false);
   const [diaryOpen, setDiary]   = useState(false);
   const [filesOpen, setFiles]   = useState(false);
-  const [medicalOpen, setMedical] = useState(false);
   const [assistantOpen, setAssistant] = useState(false);
   const [workMode, setWorkMode] = useState(false);
 
@@ -405,7 +403,7 @@ export default function Home() {
         { id: 'todo',      label: 'Tasks',     icon: TabTaskIcon },
         { id: 'work',      label: 'Work',      icon: TabWorkIcon },
         ...(LOCAL_ONLY ? [{ id: 'finances', label: 'Finance', icon: TabFinanceIcon }] : []),
-        { id: 'gym',       label: 'Gym',       icon: TabGymIcon },
+        { id: 'health',    label: 'Health',    icon: TabHealthIcon },
         ...(prayerEnabled ? [{ id: 'prayers', label: 'ప్రార్థన', icon: TabPrayerIcon }] : []),
       ];
 
@@ -429,12 +427,6 @@ export default function Home() {
         <button onClick={() => setFiles(true)} title="Files" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, color: '#444', display: 'flex', alignItems: 'center', marginRight: 4 }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M4 6a2 2 0 012-2h3l2 2h7a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2z" />
-          </svg>
-        </button>
-        {/* Medical */}
-        <button onClick={() => setMedical(true)} title="Medical history" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, color: '#444', display: 'flex', alignItems: 'center', marginRight: 4 }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
           </svg>
         </button>
         {/* Diary */}
@@ -480,7 +472,7 @@ export default function Home() {
         {active === 'todo'     && <Todo />}
         {active === 'work'     && <Work />}
         {active === 'finances' && LOCAL_ONLY && <Finances />}
-        {active === 'gym'      && <GymPlan />}
+        {active === 'health'   && <Health />}
         {active === 'prayers'  && prayerEnabled && <Prayers />}
       </main>
 
@@ -529,7 +521,6 @@ export default function Home() {
       <Vault open={vaultOpen} onClose={() => setVault(false)} />
       <Diary open={diaryOpen} onClose={() => setDiary(false)} />
       <Files open={filesOpen} onClose={() => setFiles(false)} />
-      <Medical open={medicalOpen} onClose={() => setMedical(false)} />
       {LOCAL_ONLY && <Assistant open={assistantOpen} onClose={() => setAssistant(false)} finance={false} persist={true} />}
       {isAdmin && <AdminPanel open={adminOpen} onClose={() => setAdmin(false)} />}
       <PasswordSheet open={pwOpen} onClose={() => setPwOpen(false)} />
@@ -557,13 +548,11 @@ function TabFinanceIcon({ active }) {
   );
 }
 
-function TabGymIcon({ active }) {
+function TabHealthIcon({ active }) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? '#a78bfa' : '#555'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M6 6h0M18 6h0M6 18h0M18 18h0" strokeWidth="3" strokeLinecap="round"/>
-      <line x1="3" y1="12" x2="21" y2="12" />
-      <line x1="8" y1="6" x2="8" y2="18" />
-      <line x1="16" y1="6" x2="16" y2="18" />
+      <path d="M20.8 5.6a5.5 5.5 0 00-7.8 0L12 6.6l-1-1a5.5 5.5 0 00-7.8 7.8l1 1L12 21l7.8-6.6 1-1a5.5 5.5 0 000-7.8z" />
+      <path d="M3.5 12.5H8l1.5-3 2.5 6 1.5-3h4.5" />
     </svg>
   );
 }
