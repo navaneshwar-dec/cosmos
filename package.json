@@ -15,6 +15,7 @@
     "ai": "^7.0.31",
     "better-sqlite3": "^12.11.1",
     "chrono-node": "^2.8.0",
+    "mhah-panchang": "^1.2.0",
     "next": "^15.3.3",
     "next-auth": "^5.0.0-beta.31",
     "officecrypto-tool": "^0.0.19",

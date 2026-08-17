@@ -1,9 +1,43 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 // ─── Prayer data in Telugu ─────────────────────────────────────────────────────
 
 const PRAYERS = [
+  {
+    id: 44,
+    name: 'ఆచమనం',
+    sub: 'ప్రార్థనకు ముందు — కేశవ నామాలు',
+    category: 'నిత్య విధి',
+    color: '#f59e0b',
+    icon: '💧',
+    text:
+`ఓం కేశవాయ స్వాహా |
+ఓం నారాయణాయ స్వాహా |
+ఓం మాధవాయ స్వాహా |
+ఓం గోవిందాయ నమః |
+ఓం విష్ణవే నమః |
+ఓం మధుసూదనాయ నమః |
+ఓం త్రివిక్రమాయ నమః |
+ఓం వామనాయ నమః |
+ఓం శ్రీధరాయ నమః |
+ఓం హృషీకేశాయ నమః |
+ఓం పద్మనాభాయ నమః |
+ఓం దామోదరాయ నమః |
+ఓం సంకర్షణాయ నమః |
+ఓం వాసుదేవాయ నమః |
+ఓం ప్రద్యుమ్నాయ నమః |
+ఓం అనిరుద్ధాయ నమః |
+ఓం పురుషోత్తమాయ నమః |
+ఓం అధోక్షజాయ నమః |
+ఓం నారసింహాయ నమః |
+ఓం అచ్యుతాయ నమః |
+ఓం జనార్దనాయ నమః |
+ఓం ఉపేంద్రాయ నమః |
+ఓం హరయే నమః |
+ఓం శ్రీ కృష్ణాయ నమః ||`,
+  },
+
   {
     id: 1,
     name: 'శుక్లాంబరధరం',
@@ -653,7 +687,7 @@ const PRAYERS = [
   },
 ];
 
-const CATEGORIES = ['అన్నీ', 'గణేశ', 'విష్ణు', 'దేవి', 'శివ', 'రామ', 'సాయి', 'సూర్య', 'గురు', 'సార్వత్రిక'];
+const CATEGORIES = ['అన్నీ', 'నిత్య విధి', 'గణేశ', 'విష్ణు', 'దేవి', 'శివ', 'రామ', 'సాయి', 'సూర్య', 'గురు', 'సార్వత్రిక'];
 
 // ─── Prayer card ───────────────────────────────────────────────────────────────
 
@@ -736,12 +770,30 @@ function PrayerCard({ prayer, fontSize, index }) {
   );
 }
 
+// ─── Panchangam pill ───────────────────────────────────────────────────────────
+function PanPill({ label, value }) {
+  return (
+    <div style={{ flex: '1 1 auto', minWidth: 96, padding: '7px 11px', background: 'var(--glass-1)', border: '1px solid var(--border)', borderRadius: 11 }}>
+      <div style={{ fontSize: 9.5, color: 'var(--text-faint)', fontWeight: 700, letterSpacing: 0.4 }}>{label}</div>
+      <div style={{ fontSize: 14, color: 'var(--text)', fontWeight: 700, marginTop: 2 }}>{value}</div>
+    </div>
+  );
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export default function Prayers() {
   const [fontSize, setFontSize]         = useState(18);
   const [activeCategory, setCategory]   = useState('అన్నీ');
   const [expandAll, setExpandAll]       = useState(false);
+  const [pan, setPan]                   = useState(null);
+
+  // today's panchangam — computed fresh each load, so it's always the current day
+  useEffect(() => {
+    let on = true;
+    fetch('/api/panchangam').then(r => r.ok ? r.json() : null).then(d => { if (on && d && !d.error) setPan(d); }).catch(() => {});
+    return () => { on = false; };
+  }, []);
 
   const filtered = activeCategory === 'అన్నీ'
     ? PRAYERS
@@ -778,6 +830,23 @@ export default function Prayers() {
         {/* Prayer count */}
         <span style={{ fontSize: 11, color: 'var(--border-hi)', fontWeight: 600 }}>{filtered.length} స్తోత్రాలు</span>
       </div>
+
+      {/* Today's panchangam — auto-updates each day */}
+      {pan && (
+        <div style={{ margin: '12px 14px 0', padding: '13px 15px', background: 'linear-gradient(120deg, rgba(245,158,11,0.10), rgba(245,158,11,0.02))', border: '1px solid rgba(245,158,11,0.22)', borderRadius: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, marginBottom: 11 }}>
+            <span style={{ fontSize: 12.5, fontWeight: 800, color: '#f59e0b', letterSpacing: 0.3 }}>🕉 నేటి పంచాంగం</span>
+            <span style={{ fontSize: 11, color: 'var(--text-faint)' }}>
+              {new Date(pan.date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} · {pan.vaara}
+            </span>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <PanPill label="తిథి" value={`${(pan.paksha || '').replace(' పక్షం', '')} ${pan.tithi}`} />
+            <PanPill label="నక్షత్రం" value={pan.nakshatra} />
+            <PanPill label="మాసం" value={pan.masa} />
+          </div>
+        </div>
+      )}
 
       {/* Category chips */}
       <div style={{
