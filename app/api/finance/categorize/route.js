@@ -5,7 +5,7 @@ import { isOllamaAvailable, categorizeBatch } from '../../../../lib/llmCategoriz
 import { activeRuns } from '../../../../lib/finance/categorizeControl';
 
 export const runtime = 'nodejs';
-export const maxDuration = 600;
+export const maxDuration = 300; // Vercel hobby caps at 300s (ignored locally, where the Ollama run actually happens)
 
 const BATCH_SIZE = 8;   // smaller = more frequent progress + less redone on a stall
 
