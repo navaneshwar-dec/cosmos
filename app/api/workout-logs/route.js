@@ -50,7 +50,7 @@ export async function POST(req) {
       ${exercise},
       ${started_at}::timestamptz,
       ${ended_at ?? null}::timestamptz,
-      ${JSON.stringify(sets ?? [])}::jsonb,
+      ${sql.json(sets ?? [])},
       ${skipped ?? false},
       ${skip_reason ?? null},
       ${notes ?? null}

@@ -4,16 +4,20 @@ import { auth } from '../../../../auth';
 
 export const runtime = 'nodejs';
 
+// Postgres NUMERIC deserializes as a string — coerce so callers can do arithmetic
+// on these without silently string-concatenating.
+const nums = g => g && { calories: Number(g.calories), protein: Number(g.protein), carbs: Number(g.carbs), fat: Number(g.fat) };
+
 async function readGoals(uid) {
   const [g] = await sql`SELECT calories, protein, carbs, fat FROM nutrition_goals WHERE user_id = ${uid}`;
-  if (g) return g;
+  if (g) return nums(g);
   // seed sensible defaults on first read so the dashboard always has target lines
   const [seeded] = await sql`
     INSERT INTO nutrition_goals (user_id) VALUES (${uid})
     ON CONFLICT (user_id) DO NOTHING
     RETURNING calories, protein, carbs, fat
   `;
-  return seeded ?? { calories: 2000, protein: 120, carbs: 220, fat: 60 };
+  return nums(seeded) ?? { calories: 2000, protein: 120, carbs: 220, fat: 60 };
 }
 
 export async function GET() {
@@ -37,5 +41,5 @@ export async function PUT(req) {
       carbs = EXCLUDED.carbs, fat = EXCLUDED.fat, updated_at = NOW()
     RETURNING calories, protein, carbs, fat
   `;
-  return NextResponse.json(g);
+  return NextResponse.json(nums(g));
 }

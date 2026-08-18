@@ -57,7 +57,7 @@ export async function POST(req) {
       ${log_date || istDateKey()}::date,
       ${meal || null},
       ${raw_text.trim()},
-      ${JSON.stringify(items)}::jsonb,
+      ${sql.json(items)},
       ${sum(items, 'calories')}, ${sum(items, 'protein')}, ${sum(items, 'carbs')}, ${sum(items, 'fat')}
     )
     RETURNING *
